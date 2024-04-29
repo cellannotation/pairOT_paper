@@ -6,11 +6,27 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-def plot_heatmap(
+def _plot_heatmap(data: pd.DataFrame, colormap: str, width: int, height: int):
+    fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap)
+    fig.update_layout(autosize=False, width=width, height=height)
+    return fig
+
+
+def plot_cluster_mapping(
     data: pd.DataFrame, width: int = 1000, height: int = 1000, show: bool = True
 ):
-    fig = px.imshow(data, text_auto=".2f")
-    fig.update_layout(autosize=False, width=width, height=height)
+    fig = _plot_heatmap(data, "Greens", width, height)
+    if show:
+        fig.show()
+        return None
+    else:
+        return fig
+
+
+def plot_cluster_distance(
+    data: pd.DataFrame, width: int = 1000, height: int = 1000, show: bool = True
+):
+    fig = _plot_heatmap(data, "Greens_r", width, height)
     if show:
         fig.show()
         return None
@@ -32,7 +48,7 @@ def plot_sankey(
         return {col: vals_filtered[col].tolist() for col in vals_filtered.columns}
 
     norm = mpl.colors.Normalize(vmin=0.0, vmax=2.0)
-    cmap = cm.YlOrBr
+    cmap = mpl.cm.get_cmap("Greens_r")
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
     nodes_query = cluster_mapping.index.tolist()
