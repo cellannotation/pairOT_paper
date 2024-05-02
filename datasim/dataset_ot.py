@@ -12,6 +12,7 @@ from ott.geometry import pointcloud
 from ott.problems.linear import linear_problem
 from ott.solvers.linear import sinkhorn
 from ott.utils import tqdm_progress_fn
+from scanpy.tools._rank_genes_groups import _Method
 from scipy.stats import rankdata
 
 from datasim.label_distance import de_gene_overlap_label_distance
@@ -123,14 +124,16 @@ class DatasetMapping:
             adata2[:, adata.var.highly_variable].copy(),
         )
 
-    def _compute_label_distances(self):
+    def _compute_label_distances(
+        self, n_genes: int = 25, de_method: _Method = "wilcoxon"
+    ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
         label_distance = de_gene_overlap_label_distance(
             self.adata2,
             self.adata1,
             cell_type_column="cell_type_author",
-            n_genes=50,
-            method="t-test_overestim_var",
+            n_genes=n_genes,
+            method=de_method,
         )
         label_distance_ordered = np.zeros(label_distance.shape)
         for i, label1 in enumerate(self.adata1.obs["cell_type_author"].cat.categories):
@@ -166,6 +169,8 @@ class DatasetMapping:
         self,
         lambda_feature: float = 1.0,
         lambda_label: float = 1.0,
+        n_genes_de_gene_overlap: int = 25,
+        de_method: _Method = "wilcoxon",
         **kwargs,
     ):
         """
@@ -178,11 +183,17 @@ class DatasetMapping:
             Weight for the distance in gene/feature space for the cell to cell transport cost.
         lambda_label: float = 1.0
             Weight for the distance in the label space for the cell to cell transport cost.
+        n_genes_de_gene_overlap: int = 25
+            Number of genes used to calculate overlap of top differentially expressed genes.
+        de_method: Literal["logreg", "t-test", "wilcoxon", "t-test_overestim_var"] = "wilcoxon"
+            Method used to calculate differentially expressed genes.
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.geometry.pointcloud.PointCloud`.
         """
         x, y = self._preprocess_data()
-        label_distance = self._compute_label_distances()
+        label_distance = self._compute_label_distances(
+            n_genes=n_genes_de_gene_overlap, de_method=de_method
+        )
 
         self.geom = pointcloud.PointCloud(
             x,
