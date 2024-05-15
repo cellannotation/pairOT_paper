@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Optional, List
+from typing import Dict, Tuple, Optional, List, Literal
 
 import anndata
 import jax
@@ -14,6 +14,7 @@ from ott.solvers.linear import sinkhorn
 from ott.utils import tqdm_progress_fn
 from scanpy.tools._rank_genes_groups import _Method
 from scipy.stats import rankdata
+from sklearn.utils.class_weight import compute_class_weight
 
 from datasim.label_distance import de_gene_overlap_label_distance
 
@@ -24,6 +25,19 @@ def cosine_distance(x: jnp.ndarray, y: jnp.ndarray):
     y_norm = jnp.linalg.norm(y, axis=-1)
     cosine_similarity = jnp.vdot(x, y) / (x_norm * y_norm + 1e-8)
     return 0.5 * (1.0 - cosine_similarity)
+
+
+def _compute_balanced_marginal(cell_types: pd.Series) -> np.ndarray:
+    """Compute marginal balanced by cell cell_type."""
+    assert isinstance(cell_types.dtype, pd.CategoricalDtype)
+
+    classes = cell_types.cat.categories.to_numpy()
+    weights = compute_class_weight(
+        class_weight="balanced", classes=classes, y=cell_types.to_numpy()
+    )
+    marginal = weights[cell_types.cat.codes.to_numpy()]
+
+    return marginal / marginal.sum()
 
 
 @jax.tree_util.register_pytree_node_class
@@ -125,7 +139,7 @@ class DatasetMapping:
         )
 
     def _compute_label_distances(
-        self, n_genes: int = 25, de_method: _Method = "wilcoxon"
+        self, n_genes: int = 15, de_method: _Method = "wilcoxon"
     ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
         label_distance = de_gene_overlap_label_distance(
@@ -169,7 +183,7 @@ class DatasetMapping:
         self,
         lambda_feature: float = 1.0,
         lambda_label: float = 1.0,
-        n_genes_de_gene_overlap: int = 25,
+        n_genes_de_gene_overlap: int = 15,
         de_method: _Method = "wilcoxon",
         **kwargs,
     ):
@@ -204,18 +218,42 @@ class DatasetMapping:
             **kwargs,
         )
 
-    def init_problem(self, **kwargs):
+    def init_problem(
+        self,
+        marginals_distribution: Literal["uniform", "balanced"] = "balanced",
+        **kwargs,
+    ):
         """
         Initialize the optimal transport problem.
         This function calls the constructor of :class:`ott.problem.linear.linear_problem.LinearProblem`.
 
         Parameters
         ----------
+        marginals_distribution: Literal["uniform", "balanced"] = "uniform"
+            Whether the marginals should be uniform or balanced by cell-type frequency.
+            Use "uniform" for uniform marginals.
+            Use "balanced" for marginals balanced by cell-type frequency.
+            This parameter is ignored, if marginals 'a' or 'b' are supplied via the **kwargs.
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.problem.linear.linear_problem.LinearProblem`.
         """
         assert self.geom is not None
-        self.ot_prob = linear_problem.LinearProblem(self.geom, **kwargs)
+        if marginals_distribution == "uniform":
+            a, b = None, None
+        elif marginals_distribution == "balanced":
+            a = _compute_balanced_marginal(self.adata1.obs["cell_type_author"])
+            b = _compute_balanced_marginal(self.adata2.obs["cell_type_author"])
+        else:
+            raise ValueError(
+                f"marginals argument must be either 'uniform' or 'balanced'. You provided: {marginals_distribution}"
+            )
+
+        if ("a" not in kwargs) and ("b" not in kwargs):
+            self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, b=b, **kwargs)
+        elif "a" in kwargs:
+            self.ot_prob = linear_problem.LinearProblem(self.geom, b=b, **kwargs)
+        elif "b" in kwargs:
+            self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, **kwargs)
 
     def solve(self, **kwargs):
         """
@@ -241,14 +279,14 @@ class DatasetMapping:
             np.array(arr[:, -1]).astype("i8") for arr in [self.geom.x, self.geom.y]
         )
 
-    def compute_cluster_mapping(self, normalize: bool = True) -> pd.DataFrame:
+    def compute_cluster_mapping(self, normalize: bool = False) -> pd.DataFrame:
         """
         Compute the mapping between cell-type clusters based on the aggregated transport matrix.
         Aggregation is done by cluster/cell-type.
 
         Parameters
         ----------
-        normalize: bool = True
+        normalize: bool = False
             Whether to normalize each row of the aggregated transport matrix to sum up to 1.
 
         Returns

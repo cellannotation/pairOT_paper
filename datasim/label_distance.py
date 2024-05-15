@@ -107,8 +107,8 @@ def de_gene_overlap_label_distance(
     adata1: anndata.AnnData,
     adata2: anndata.AnnData,
     cell_type_column: str,
-    n_genes: int = 50,
-    method: _Method = "t-test_overestim_var",
+    n_genes: int = 15,
+    method: _Method = "wilcoxon",
 ) -> pd.DataFrame:
     """Compute cell-type label distance matrix based on overlap of differentially expressed genes between clusters."""
     assert cell_type_column in adata1.obs.columns
