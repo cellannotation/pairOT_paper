@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from scanpy.plotting.palettes import default_102
 
 
 def _plot_heatmap(data: pd.DataFrame, colormap: str, width: int, height: int):
@@ -98,3 +99,39 @@ def plot_sankey(
         return None
     else:
         return fig
+
+
+def plot_scatterplot(adata, hue, title, width: int = 750, height: int = 600, cmap=None):
+    assert "X_umap" in adata.obsm
+    if cmap is None:
+        cmap = {ct: color for ct, color in zip(adata.obs[hue].unique(), default_102)}
+    cmap["None"] = "lightgray"
+
+    fig = px.scatter(
+        x=adata.obsm["X_umap"][:, 0],
+        y=adata.obsm["X_umap"][:, 1],
+        color=adata.obs[hue],
+        title=title,
+        width=width,
+        height=height,
+        color_discrete_map=cmap,
+        labels={"x": "UMAP1", "y": "UMAP2"},
+    )
+    fig.update_traces(marker=dict(size=1))
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        xaxis=dict(showline=True, linecolor="black", linewidth=1, mirror=True),
+        yaxis=dict(showline=True, linecolor="black", linewidth=1, mirror=True),
+        margin=dict(l=40, r=40, t=40, b=40),
+        legend=dict(
+            itemsizing="constant",
+            title_text=None,
+            tracegroupgap=6,
+        ),
+        legend_tracegroupgap=10,
+    )
+
+    return fig
