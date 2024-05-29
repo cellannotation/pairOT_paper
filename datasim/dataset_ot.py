@@ -139,7 +139,10 @@ class DatasetMapping:
         )
 
     def _compute_label_distances(
-        self, n_genes: int = 15, de_method: _Method = "wilcoxon"
+        self,
+        n_genes: int = 15,
+        de_method: _Method = "wilcoxon",
+        p_value_threshold: float = 0.01,
     ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
         label_distance = de_gene_overlap_label_distance(
@@ -148,6 +151,7 @@ class DatasetMapping:
             cell_type_column="cell_type_author",
             n_genes=n_genes,
             method=de_method,
+            p_value_threshold=p_value_threshold,
         )
         label_distance_ordered = np.zeros(label_distance.shape)
         for i, label1 in enumerate(self.adata1.obs["cell_type_author"].cat.categories):
@@ -185,6 +189,7 @@ class DatasetMapping:
         lambda_label: float = 1.0,
         n_genes_de_gene_overlap: int = 15,
         de_method: _Method = "wilcoxon",
+        p_value_threshold: float = 0.01,
         **kwargs,
     ):
         """
@@ -197,16 +202,21 @@ class DatasetMapping:
             Weight for the distance in gene/feature space for the cell to cell transport cost.
         lambda_label: float = 1.0
             Weight for the distance in the label space for the cell to cell transport cost.
-        n_genes_de_gene_overlap: int = 25
+        n_genes_de_gene_overlap: int = 15
             Number of genes used to calculate overlap of top differentially expressed genes.
         de_method: Literal["logreg", "t-test", "wilcoxon", "t-test_overestim_var"] = "wilcoxon"
             Method used to calculate differentially expressed genes.
+            See sc.tl.rank_genes_groups for more details.
+        p_value_threshold: float = 0.01
+            Minimum p-value to consider a gene as differentially expressed.
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.geometry.pointcloud.PointCloud`.
         """
         x, y = self._preprocess_data()
         label_distance = self._compute_label_distances(
-            n_genes=n_genes_de_gene_overlap, de_method=de_method
+            n_genes=n_genes_de_gene_overlap,
+            de_method=de_method,
+            p_value_threshold=p_value_threshold,
         )
 
         self.geom = pointcloud.PointCloud(
@@ -291,7 +301,7 @@ class DatasetMapping:
 
         Returns
         -------
-        Returns :class:`pandas.DataFrame` containing the mapping between cell-type clusters.
+        :class:`pandas.DataFrame` containing the mapping between cell-type clusters.
         """
         assert self.geom is not None
         assert self.ot_prob is not None
@@ -321,18 +331,18 @@ class DatasetMapping:
             columns=self.adata2.obs.cell_type_author.cat.categories,
         )
 
-    def compute_cluster_distances(self, n_samples: int = 10000) -> pd.DataFrame:
+    def compute_cluster_distances(self, n_samples: int = 25000) -> pd.DataFrame:
         """
         Compute the distance between cell-type clusters based on the optimal transport mappings.
 
         Parameters
         ----------
         n_samples: int = 10000
-            The number of samples based on which the distance is calcuated.
+            The number of samples based on which the distance is calculated.
 
         Returns
         -------
-        Returns :class:`pandas.DataFrame` containing the distance between cell-type clusters.
+        :class:`pandas.DataFrame` containing the distance between cell-type clusters.
         """
         assert self.geom is not None
         assert self.ot_prob is not None
@@ -372,9 +382,40 @@ class DatasetMapping:
             columns=self.adata2.obs.cell_type_author.cat.categories,
         )
 
+    def project_query_labels_onto_reference(self) -> np.ndarray:
+        """
+        Project the cell-type labels from the query dataset (adata1) onto the reference dataset (adata2).
+
+        Returns
+        -------
+        :class:`numpy.ndarray`
+        Cell-type labels of the query dataset (adata1) project onto the cells of the reference dataset (adata2).
+        """
+        assert self.geom is not None
+        assert self.ot_prob is not None
+        assert self.ot_solution is not None
+
+        x_label_np, y_label_np = self._get_label_vectors()
+        unique_labels_x, unique_labels_y = np.unique(x_label_np), np.unique(y_label_np)
+        transport = {}
+        for label_x in tqdm.tqdm(unique_labels_x):
+            transport[label_x] = np.array(
+                self.ot_solution.apply(
+                    jnp.array(np.array(x_label_np == label_x).astype("f4"))
+                )
+            ).astype("f8")
+
+        transport_np = np.array([transport[i] for i in sorted(transport.keys())])
+        labels = self.adata1.obs.cell_type_author.cat.categories.to_numpy()
+
+        return labels[np.argmax(transport_np, axis=0)]
+
     @staticmethod
     def select_most_similar_clusters(
-        cluster_mapping: pd.DataFrame, threshold: float = 0.1, n_top: int = 5
+        cluster_mapping: pd.DataFrame,
+        cluster_distance: pd.DataFrame,
+        threshold: float = 1.0,
+        n_top: int = 3,
     ) -> Dict[str, List[str]]:
         """
         Select the `n_top` most similar cell-type clusters in the reference data for each cell-type cluster in the query
@@ -384,9 +425,12 @@ class DatasetMapping:
         ----------
         cluster_mapping: pd.DataFrame
             The cluster mapping matrix / aggregated transport matrix. The output of self.compute_cluster_mapping().
-        threshold: float = 0.1
-            The minimum value in the aggregated transport matrix for a cluster to be considered.
-        n_top: int = 5
+        cluster_distance: pd.DataFrame
+            The cluster distance matrix. The output of self.compute_cluster_distances().
+        threshold: float = 1.0
+            The maximum distance between two cell-type clusters for a cluster to be suggested as a most similar
+            cell-type cluster.
+        n_top: int = 3
             Maximum number of most similar clusters to return.
 
         Returns
@@ -395,12 +439,18 @@ class DatasetMapping:
         data as a :class:`Dict[str, List[str]]`
         """
         top_n_labels = {}
-        for label_query in cluster_mapping.index:
-            elems = (
-                cluster_mapping.loc[label_query]
-                .T.sort_values(ascending=False)
-                .head(n_top)
-            )
-            top_n_labels[label_query] = elems[elems >= threshold].index.tolist()
+        most_similar_clusters = np.argsort(-cluster_mapping.to_numpy(), axis=1)[
+            :, :n_top
+        ]
+        labels_query = cluster_mapping.index.tolist()
+        labels_ref = cluster_mapping.columns
+
+        for i, label in enumerate(labels_query):
+            distances = cluster_distance.loc[label, :].to_numpy()
+            top_n_labels[label] = [
+                labels_ref[j]
+                for j in most_similar_clusters[i, :]
+                if distances[j] <= threshold
+            ]
 
         return top_n_labels
