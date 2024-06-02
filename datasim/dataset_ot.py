@@ -13,10 +13,12 @@ from ott.problems.linear import linear_problem
 from ott.solvers.linear import sinkhorn
 from ott.utils import tqdm_progress_fn
 from scanpy.tools._rank_genes_groups import _Method
+from scipy.sparse import issparse
 from scipy.stats import rankdata
 from sklearn.utils.class_weight import compute_class_weight
 
 from datasim.label_distance import de_gene_overlap_label_distance
+from datasim.utils import get_expressed_genes_intersection
 
 
 def cosine_distance(x: jnp.ndarray, y: jnp.ndarray):
@@ -38,6 +40,13 @@ def _compute_balanced_marginal(cell_types: pd.Series) -> np.ndarray:
     marginal = weights[cell_types.cat.codes.to_numpy()]
 
     return marginal / marginal.sum()
+
+
+def _convert_to_dense_numpy(arr):
+    if issparse(arr):
+        return arr.toarray().astype("f4")
+    else:
+        return arr.astype("f4")
 
 
 @jax.tree_util.register_pytree_node_class
@@ -106,12 +115,7 @@ class DatasetMapping:
         n_top_genes: int = 2000,
     ) -> Tuple[anndata.AnnData, anndata.AnnData]:
         """
-        Preprocess input data.
-
-        This includes the following steps:
-        1. Normalize total counts per cell via sc.pp.normalize_total
-        2. Log1p-transform input data
-        3. Select `n_top_genes` highly variable genes
+        Subset the input anndata.AnnData object to the top `n_top_genes` highly variable genes.
 
         Parameters
         ----------
@@ -126,17 +130,18 @@ class DatasetMapping:
         -------
         Tuple[anndata.AnnData, anndata.AnnData]
         """
-        sc.pp.normalize_total(adata1)
-        sc.pp.log1p(adata1)
-        sc.pp.normalize_total(adata2)
-        sc.pp.log1p(adata2)
-        adata = anndata.concat([adata1, adata2], label="dataset", keys=["ref", "query"])
+        # subset gene space to genes that are expressed in both datasets
+        intersection_genes = get_expressed_genes_intersection(adata1, adata2)
+        adata1 = adata1[:, intersection_genes]
+        adata2 = adata2[:, intersection_genes]
+        # subset to highly variable genes
+        adata = anndata.concat([adata1, adata2], label="dataset", keys=["query", "ref"])
+        sc.pp.normalize_total(adata, target_sum=1e4)
+        sc.pp.log1p(adata)
         sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, batch_key="dataset")
+        highly_variable = adata.var["highly_variable"].to_numpy().copy()
 
-        return (
-            adata1[:, adata.var.highly_variable].copy(),
-            adata2[:, adata.var.highly_variable].copy(),
-        )
+        return adata1[:, highly_variable].copy(), adata2[:, highly_variable].copy()
 
     def _compute_label_distances(
         self,
@@ -145,18 +150,26 @@ class DatasetMapping:
         p_value_threshold: float = 0.01,
     ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
+        # normalize data before doing DE tests
+        adata1_test = self.adata1.copy()
+        adata2_test = self.adata2.copy()
+        sc.pp.normalize_total(adata1_test, target_sum=1e4)
+        sc.pp.normalize_total(adata2_test, target_sum=1e4)
+        sc.pp.log1p(adata1_test)
+        sc.pp.log1p(adata2_test)
+
         label_distance = de_gene_overlap_label_distance(
-            self.adata2,
-            self.adata1,
+            adata2_test,
+            adata1_test,
             cell_type_column="cell_type_author",
             n_genes=n_genes,
             method=de_method,
             p_value_threshold=p_value_threshold,
         )
         label_distance_ordered = np.zeros(label_distance.shape)
-        for i, label1 in enumerate(self.adata1.obs["cell_type_author"].cat.categories):
+        for i, label1 in enumerate(adata1_test.obs["cell_type_author"].cat.categories):
             for j, label2 in enumerate(
-                self.adata2.obs["cell_type_author"].cat.categories
+                adata2_test.obs["cell_type_author"].cat.categories
             ):
                 label_distance_ordered[i, j] = label_distance.loc[label1, label2]
 
@@ -166,8 +179,8 @@ class DatasetMapping:
         adata1 = self.adata1
         adata2 = self.adata2
         if embedding_layer is None:
-            x1 = adata1.X.toarray()
-            x2 = adata2.X.toarray()
+            x1 = _convert_to_dense_numpy(adata1.X)
+            x2 = _convert_to_dense_numpy(adata2.X)
             # rank and zero center data that cosine similarity is equal to Spearman correlation
             x1 = rankdata(x1, axis=1)
             x2 = rankdata(x2, axis=1)
