@@ -1,3 +1,4 @@
+import pickle
 from typing import Dict, Tuple, Optional, List, Literal
 
 import anndata
@@ -9,6 +10,7 @@ import pandas as pd
 import scanpy as sc
 import tqdm
 from ott.geometry import pointcloud
+from ott.geometry.costs import Cosine
 from ott.problems.linear import linear_problem
 from ott.solvers.linear import sinkhorn
 from ott.utils import tqdm_progress_fn
@@ -47,6 +49,53 @@ def _convert_to_dense_numpy(arr):
         return arr.toarray().astype("f4")
     else:
         return arr.astype("f4")
+
+
+def _get_category_mapping(series: pd.Series) -> Dict[str, int]:
+    return {v: k for k, v in enumerate(series.cat.categories)}
+
+
+def _select_idxs(
+    label_arr: np.ndarray, label: int, n: Optional[int] = None
+) -> jnp.ndarray:
+    idxs_label = np.where(label_arr == label)[0]
+    if n is not None:
+        idxs_label = np.random.choice(
+            idxs_label, size=min(n, len(idxs_label)), replace=False
+        )
+
+    return jnp.array(idxs_label)
+
+
+def _get_label_frequency(cell_type_labels: pd.Series, subset: np.ndarray) -> pd.Series:
+    return (
+        cell_type_labels[cell_type_labels.isin(subset)]
+        .cat.remove_unused_categories()
+        .value_counts(normalize=True)
+    )
+
+
+def _predict_from_marginals(
+    labels_ref: pd.Series, marginal_contrib: Dict[str, np.ndarray]
+) -> np.ndarray:
+    labels, marginals = zip(*marginal_contrib.items())
+    labels, marginals = np.array(labels), np.stack(marginals).T
+    label_freq_ref = _get_label_frequency(labels_ref, labels).loc[labels].to_numpy()
+
+    predictions = np.empty(marginals.shape, dtype=bool)
+    for i, freq in enumerate(label_freq_ref):
+        x = marginals[:, i]
+        predictions[:, i] = x >= np.quantile(x, 1.0 - freq)
+    # correct if one cell has been assigned more than once
+    highest_diff_pred = labels[
+        # use relative difference
+        np.argmax(marginals / np.quantile(marginals, label_freq_ref), axis=1)
+    ]
+    correction_mask = np.sum(predictions, axis=1) != 1
+    for i, _ in enumerate(labels):
+        predictions[correction_mask, i] = highest_diff_pred[correction_mask] == i
+
+    return labels[np.argmax(predictions, axis=1)]
 
 
 @jax.tree_util.register_pytree_node_class
@@ -107,6 +156,25 @@ class DatasetMapping:
                 np.unique(adata.obs.cell_type_author.cat.codes).astype("i8"),
                 np.arange(len(adata.obs.cell_type_author.cat.categories), dtype="i8"),
             )
+
+    def _assert_geom_initialized(self):
+        if self.geom is None:
+            raise RuntimeError("Geometry is not initialized. Run .init_geom() first.")
+
+    def _assert_prob_initialized(self):
+        if self.ot_prob is None:
+            raise RuntimeError(
+                "OT problem is not initialized. Run .init_problem() first."
+            )
+
+    def _assert_solution_initialized(self):
+        if self.ot_solution is None:
+            raise RuntimeError("OT solution is not calculated. Run self.solve() first.")
+
+    def _assert_fully_initialized(self):
+        self._assert_geom_initialized()
+        self._assert_prob_initialized()
+        self._assert_solution_initialized()
 
     @staticmethod
     def preprocess_adatas(
@@ -255,12 +323,15 @@ class DatasetMapping:
         marginals_distribution: Literal["uniform", "balanced"] = "uniform"
             Whether the marginals should be uniform or balanced by cell-type frequency.
             Use "uniform" for uniform marginals.
+                (E.g. each cell contributes the same mass to the marginal distribution)
             Use "balanced" for marginals balanced by cell-type frequency.
+                (E.g. each cell type contributes the same mass to the marginal distribution)
             This parameter is ignored, if marginals 'a' or 'b' are supplied via the **kwargs.
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.problem.linear.linear_problem.LinearProblem`.
         """
-        assert self.geom is not None
+        self._assert_geom_initialized()
+
         if marginals_distribution == "uniform":
             a, b = None, None
         elif marginals_distribution == "balanced":
@@ -272,10 +343,14 @@ class DatasetMapping:
             )
 
         if ("a" not in kwargs) and ("b" not in kwargs):
+            assert np.all(np.array(a) > 0.0)
+            assert np.all(np.array(b) > 0.0)
             self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, b=b, **kwargs)
         elif "a" in kwargs:
+            assert np.all(np.array(b) > 0.0)
             self.ot_prob = linear_problem.LinearProblem(self.geom, b=b, **kwargs)
         elif "b" in kwargs:
+            assert np.all(np.array(a) > 0.0)
             self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, **kwargs)
 
     def solve(self, **kwargs):
@@ -288,8 +363,8 @@ class DatasetMapping:
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.solvers.linear.sinkhorn.Sinkhorn`.
         """
-        assert self.geom is not None
-        assert self.ot_prob is not None
+        self._assert_geom_initialized()
+        self._assert_prob_initialized()
 
         with tqdm.tqdm() as pbar:
             progress_fn = tqdm_progress_fn(pbar)
@@ -302,41 +377,39 @@ class DatasetMapping:
             np.array(arr[:, -1]).astype("i8") for arr in [self.geom.x, self.geom.y]
         )
 
-    def compute_cluster_mapping(self, normalize: bool = False) -> pd.DataFrame:
+    def compute_cluster_mapping(
+        self, normalize_by_target_marginal: bool = True
+    ) -> pd.DataFrame:
         """
         Compute the mapping between cell-type clusters based on the aggregated transport matrix.
         Aggregation is done by cluster/cell-type.
 
         Parameters
         ----------
-        normalize: bool = False
-            Whether to normalize each row of the aggregated transport matrix to sum up to 1.
+        normalize_by_target_marginal: bool = True
+            Whether to normalize the transported mass by the marginal of the target distribution.
 
         Returns
         -------
         :class:`pandas.DataFrame` containing the mapping between cell-type clusters.
         """
-        assert self.geom is not None
-        assert self.ot_prob is not None
-        assert self.ot_solution is not None
+        self._assert_fully_initialized()
 
         x_label_np, y_label_np = self._get_label_vectors()
         unique_labels_x, unique_labels_y = np.unique(x_label_np), np.unique(y_label_np)
-
         transport_map_agg = np.zeros((len(unique_labels_x), len(unique_labels_y)))
         for label_x in tqdm.tqdm(unique_labels_x):
-            transported_mass = np.array(
-                self.ot_solution.apply(
-                    jnp.array(np.array(x_label_np == label_x).astype("f4"))
-                )
-            ).astype("f8")
+            transported_mass = self.ot_solution.apply(jnp.array(x_label_np == label_x))
+            if normalize_by_target_marginal:
+                agg_fct = np.mean
+                transported_mass = transported_mass / self.ot_prob.b
+            else:
+                agg_fct = np.sum
+            transported_mass = np.array(transported_mass).astype("f8")
             for label_y in unique_labels_y:
-                transport_map_agg[label_x, label_y] = transported_mass[
-                    y_label_np == label_y
-                ].sum()
-
-        if normalize:
-            transport_map_agg /= transport_map_agg.sum(axis=1, keepdims=True)
+                transport_map_agg[label_x, label_y] = agg_fct(
+                    transported_mass[y_label_np == label_y]
+                )
 
         return pd.DataFrame(
             transport_map_agg,
@@ -357,26 +430,16 @@ class DatasetMapping:
         -------
         :class:`pandas.DataFrame` containing the distance between cell-type clusters.
         """
-        assert self.geom is not None
-        assert self.ot_prob is not None
-        assert self.ot_solution is not None
-
-        def select_idxs(label_arr: np.ndarray, label: int, n: int) -> jnp.ndarray:
-            idxs_label = np.where(label_arr == label)[0]
-            idxs_label = np.random.choice(
-                idxs_label, min(n, len(idxs_label)), replace=False
-            )
-            return jnp.array(idxs_label)
+        self._assert_fully_initialized()
 
         x_label_np, y_label_np = self._get_label_vectors()
         unique_labels_x, unique_labels_y = np.unique(x_label_np), np.unique(y_label_np)
-
         with tqdm.tqdm(total=len(unique_labels_x) * len(unique_labels_y)) as pbar:
             weighted_cost = np.zeros((len(unique_labels_x), len(unique_labels_y)))
             for label_x in unique_labels_x:
                 for label_y in unique_labels_y:
-                    idxs_label_x = select_idxs(x_label_np, label_x, n_samples)
-                    idxs_label_y = select_idxs(y_label_np, label_y, n_samples)
+                    idxs_label_x = _select_idxs(x_label_np, label_x, n_samples)
+                    idxs_label_y = _select_idxs(y_label_np, label_y, n_samples)
                     geom_subset = self.geom.subset(idxs_label_x, idxs_label_y)
                     transport_matrix = geom_subset.transport_from_potentials(
                         self.ot_solution.f[idxs_label_x],
@@ -387,7 +450,7 @@ class DatasetMapping:
                         self.geom.x[idxs_label_x, :], self.geom.y[idxs_label_y, :]
                     )
                     weighted_cost[label_x, label_y] = jnp.sum(cost * transport_matrix)
-                    pbar.update(1)
+                    pbar.update()
 
         return pd.DataFrame(
             weighted_cost,
@@ -395,40 +458,61 @@ class DatasetMapping:
             columns=self.adata2.obs.cell_type_author.cat.categories,
         )
 
-    def project_query_labels_onto_reference(self) -> np.ndarray:
-        """
-        Project the cell-type labels from the query dataset (adata1) onto the reference dataset (adata2).
+    def refine_clusters_based_on_reference(
+        self, top_n_labels: Dict[str, List[str]]
+    ) -> pd.Series:
+        self._assert_fully_initialized()
 
-        Returns
-        -------
-        :class:`numpy.ndarray`
-        Cell-type labels of the query dataset (adata1) project onto the cells of the reference dataset (adata2).
-        """
-        assert self.geom is not None
-        assert self.ot_prob is not None
-        assert self.ot_solution is not None
-
+        category_mapping_x = _get_category_mapping(self.adata1.obs["cell_type_author"])
+        category_mapping_y = _get_category_mapping(self.adata2.obs["cell_type_author"])
         x_label_np, y_label_np = self._get_label_vectors()
-        unique_labels_x, unique_labels_y = np.unique(x_label_np), np.unique(y_label_np)
-        transport = {}
-        for label_x in tqdm.tqdm(unique_labels_x):
-            transport[label_x] = np.array(
-                self.ot_solution.apply(
-                    jnp.array(np.array(x_label_np == label_x).astype("f4"))
+        sub_clusters = pd.Series(
+            ["None"] * len(self.adata1), index=self.adata1.obs.index
+        )
+
+        for label_x, suggestions in tqdm.tqdm(top_n_labels.items()):
+            mask_x = x_label_np == category_mapping_x[label_x]
+            mask_y = np.isin(y_label_np, [category_mapping_y[s] for s in suggestions])
+            if len(suggestions) == 0:
+                continue
+            elif len(suggestions) == 1:
+                sub_clusters[mask_x] = label_x
+            else:
+                geom = pointcloud.PointCloud(
+                    x=self.geom.y[mask_y, :-1].copy(),
+                    y=self.geom.x[mask_x, :-1].copy(),
+                    cost_fn=Cosine(),
+                    batch_size=self.geom.batch_size,
+                    epsilon=self.geom.epsilon,
                 )
-            ).astype("f8")
+                prob = linear_problem.LinearProblem(geom)
+                ot_sol = jax.jit(sinkhorn.Sinkhorn())(prob)
 
-        transport_np = np.array([transport[i] for i in sorted(transport.keys())])
-        labels = self.adata1.obs.cell_type_author.cat.categories.to_numpy()
+                marginals_contrib = {}
+                for s in suggestions:
+                    marginals_contrib[s] = np.array(
+                        ot_sol.apply(y_label_np[mask_y] == category_mapping_y[s])
+                        / prob.b
+                    ).astype("f8")
+                predictions = _predict_from_marginals(
+                    self.adata2.obs.query(f"`cell_type_author` in {suggestions}")[
+                        "cell_type_author"
+                    ],
+                    marginals_contrib,
+                )
+                sub_clusters[mask_x] = [
+                    f"{label_x} --> " + pred for pred in predictions
+                ]
 
-        return labels[np.argmax(transport_np, axis=0)]
+        return sub_clusters.replace({"None": None}).astype("category")
 
     @staticmethod
     def select_most_similar_clusters(
         cluster_mapping: pd.DataFrame,
         cluster_distance: pd.DataFrame,
-        threshold: float = 1.0,
-        n_top: int = 3,
+        threshold_mass: Optional[float] = 0.25,
+        threshold_distance: Optional[float] = 1.0,
+        n_top: Optional[int] = None,
     ) -> Dict[str, List[str]]:
         """
         Select the `n_top` most similar cell-type clusters in the reference data for each cell-type cluster in the query
@@ -440,30 +524,65 @@ class DatasetMapping:
             The cluster mapping matrix / aggregated transport matrix. The output of self.compute_cluster_mapping().
         cluster_distance: pd.DataFrame
             The cluster distance matrix. The output of self.compute_cluster_distances().
-        threshold: float = 1.0
+        threshold_mass: float = 0.01
+            The minimum transported mass between two cell-type clusters for a cluster to be suggested as a most similar
+            cell-type cluster.
+            If set to `None`, no filtering will be applied.
+        threshold_distance: float = 1.0
             The maximum distance between two cell-type clusters for a cluster to be suggested as a most similar
             cell-type cluster.
+            If set to `None`, no filtering will be applied.
         n_top: int = 3
             Maximum number of most similar clusters to return.
+            If set to `None`, all cell-type clusters will be returned.
 
         Returns
         -------
         Returns the most similar cell-type clusters in the reference dataset for each cell-type cluster in the query
         data as a :class:`Dict[str, List[str]]`
         """
+        if threshold_mass is None:
+            threshold_mass = 0.0  # Don't do filtering if no threshold is provided
+        if threshold_distance is None:
+            threshold_distance = 2.0  # Don't do filtering if no threshold is provided
+
         top_n_labels = {}
-        most_similar_clusters = np.argsort(-cluster_mapping.to_numpy(), axis=1)[
-            :, :n_top
-        ]
         labels_query = cluster_mapping.index.tolist()
         labels_ref = cluster_mapping.columns
-
         for i, label in enumerate(labels_query):
-            distances = cluster_distance.loc[label, :].to_numpy()
+            distance = cluster_distance.loc[label, :].to_numpy()
+            mass = cluster_mapping.loc[label, :].to_numpy()
+            suggestions = np.argsort(-mass)[:n_top]
+
             top_n_labels[label] = [
-                labels_ref[j]
-                for j in most_similar_clusters[i, :]
-                if distances[j] <= threshold
+                labels_ref[s]
+                for s in suggestions
+                if distance[s] <= threshold_distance and mass[s] >= threshold_mass
             ]
 
         return top_n_labels
+
+    def pickle_state(self, path: str):
+        """Pickle the state of the OT model."""
+        self._assert_fully_initialized()
+        with open(path, "wb") as f:
+            pickle.dump(
+                (self.geom, self.ot_prob, self.ot_solution),
+                f,
+            )
+
+    def load_state(self, path: str):
+        """Load the pickled state of the OT model."""
+        with open(path, "rb") as f:
+            self.geom, self.ot_prob, self.ot_solution = pickle.load(f)
+
+    def pickle_ot_solution(self, path: str):
+        """Pickle the solution of the OT model."""
+        self._assert_solution_initialized()
+        with open(path, "wb") as f:
+            pickle.dump(self.ot_solution, f)
+
+    def load_ot_solution(self, path: str):
+        """Load the solution of the OT model."""
+        with open(path, "rb") as f:
+            self.ot_solution = pickle.load(f)
