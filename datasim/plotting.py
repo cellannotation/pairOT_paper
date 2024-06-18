@@ -1,5 +1,8 @@
+from typing import Optional
+
 import matplotlib as mpl
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -7,14 +10,27 @@ import plotly.graph_objects as go
 from scanpy.plotting.palettes import default_102
 
 
-def _plot_heatmap(data: pd.DataFrame, colormap: str, width: int, height: int):
-    fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap)
+def _plot_heatmap(
+    data: pd.DataFrame,
+    colormap: str,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    **kwargs,
+):
+    if width is None:
+        width = 30 * data.shape[1]
+    if height is None:
+        height = 20 * data.shape[0] + 275
+    fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap, **kwargs)
     fig.update_layout(autosize=False, width=width, height=height)
     return fig
 
 
 def plot_cluster_mapping(
-    data: pd.DataFrame, width: int = 1000, height: int = 1000, show: bool = True
+    data: pd.DataFrame,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    show: bool = True,
 ):
     fig = _plot_heatmap(data, "Greens", width, height)
     if show:
@@ -25,9 +41,12 @@ def plot_cluster_mapping(
 
 
 def plot_cluster_distance(
-    data: pd.DataFrame, width: int = 1000, height: int = 1000, show: bool = True
+    data: pd.DataFrame,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    show: bool = True,
 ):
-    fig = _plot_heatmap(data, "Greens_r", width, height)
+    fig = _plot_heatmap(data, "RdYlGn_r", width, height, zmin=0.0, zmax=2.0)
     if show:
         fig.show()
         return None
@@ -38,7 +57,7 @@ def plot_cluster_distance(
 def plot_sankey(
     cluster_mapping: pd.DataFrame,
     cluster_distance: pd.DataFrame,
-    filter_threshold: float = 0.1,
+    filter_threshold: float = 0.25,
     width: int = 1000,
     height: int = 1200,
     show: bool = True,
@@ -49,7 +68,7 @@ def plot_sankey(
         return {col: vals_filtered[col].tolist() for col in vals_filtered.columns}
 
     norm = mpl.colors.Normalize(vmin=0.0, vmax=2.0)
-    cmap = mpl.cm.get_cmap("Greens_r")
+    cmap = plt.get_cmap("RdYlGn_r")
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
     nodes_query = cluster_mapping.index.tolist()
