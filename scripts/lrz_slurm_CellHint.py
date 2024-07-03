@@ -39,7 +39,6 @@ SEARCH_SPACE = {
         "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
         "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
         "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
-        "7d7cabfd-1d1f-40af-96b7-26a0825a306d",
         "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
         "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
         "ced320a1-29f3-47c1-a735-513c7084d508",
