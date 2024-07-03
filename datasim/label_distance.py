@@ -74,13 +74,10 @@ def bures_wasserstein_label_distance(
     assert x_embed_1.shape[0] == len(cell_type_labels_1)
     assert x_embed_2.shape[0] == len(cell_type_labels_2)
 
-    print("Calcualting mean vectors...")
     means1 = _calc_mean(x_embed_1, cell_type_labels_1)
     means2 = _calc_mean(x_embed_2, cell_type_labels_2)
-    print("Calcualting covariance matrices...")
     cov1 = _calc_cov(x_embed_1, cell_type_labels_1)
     cov2 = _calc_cov(x_embed_2, cell_type_labels_2)
-    print("Computing label distances...")
     labels1 = list(means1.keys())
     labels2 = list(means2.keys())
     bures_wasserstein_dist_mtx = np.zeros((len(labels1), len(labels2)))
@@ -106,12 +103,10 @@ def spearmanr_label_distance(
     assert x1.shape[0] == len(cell_type_labels_1)
     assert x2.shape[0] == len(cell_type_labels_2)
 
-    print("Calculating mean vectors...")
     means1 = _calc_mean(x1, cell_type_labels_1)
     means2 = _calc_mean(x2, cell_type_labels_2)
     labels1 = list(means1.keys())
     labels2 = list(means2.keys())
-    print("Computing label distances...")
     spearman_corr = spearmanr(
         np.vstack([means1[k] for k in labels1]),
         np.vstack([means2[k] for k in labels2]),

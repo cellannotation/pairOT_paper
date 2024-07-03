@@ -423,7 +423,7 @@ class DatasetMapping:
 
         Parameters
         ----------
-        n_samples: int = 10000
+        n_samples: int = 25000
             The number of samples based on which the distance is calculated.
 
         Returns

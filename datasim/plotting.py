@@ -30,9 +30,11 @@ def plot_cluster_mapping(
     data: pd.DataFrame,
     width: Optional[int] = None,
     height: Optional[int] = None,
+    zmin: Optional[float] = None,
+    zmax: Optional[float] = None,
     show: bool = True,
 ):
-    fig = _plot_heatmap(data, "Greens", width, height)
+    fig = _plot_heatmap(data, "Greens", width, height, zmin=zmin, zmax=zmax)
     if show:
         fig.show()
         return None
