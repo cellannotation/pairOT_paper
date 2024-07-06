@@ -1,5 +1,5 @@
 import os
-from time import sleep
+from itertools import product
 
 JOB_SCRIPT = r"""#!/bin/bash
 
@@ -37,59 +37,77 @@ srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
 
 
 SEARCH_SPACE = {
-    "query": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
-    "ref": [
-        "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
-        "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
-        "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
-        "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
-        "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
-        "ced320a1-29f3-47c1-a735-513c7084d508",
-        "ddfad306-714d-4cc0-9985-d9072820c530",
-        "eb735cc9-d0a7-48fa-b255-db726bf365af",
-        "ed9185e3-5b82-40c7-9824-b2141590c7f0",
-    ],
-    "n_top_genes": [3000],
-    "n_genes_de_gene_overlap": [10],
-    "batch_size": [1024],
-    "tau": [1.0],
-    "epsilon": [0.05],
+    "query": {
+        "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
+        "include_in_version": True,
+    },
+    "ref": {
+        "values": [
+            "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
+            "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
+            "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
+            "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
+            "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
+            "ced320a1-29f3-47c1-a735-513c7084d508",
+            "ddfad306-714d-4cc0-9985-d9072820c530",
+            "eb735cc9-d0a7-48fa-b255-db726bf365af",
+            "ed9185e3-5b82-40c7-9824-b2141590c7f0",
+        ],
+        "include_in_version": True,
+    },
+    "n_top_genes": {"values": [3000], "include_in_version": False},
+    "n_genes_correlation": {"values": [1000], "include_in_version": True},
+    "n_genes_de_gene_overlap": {"values": [10], "include_in_version": False},
+    "batch_size": {"values": [2048], "include_in_version": False},
+    "tau": {"values": [1.0], "include_in_version": False},
+    "epsilon": {"values": [0.05], "include_in_version": False},
 }
 
 
 if __name__ == "__main__":
-    for query in SEARCH_SPACE["query"]:
-        for ref in SEARCH_SPACE["ref"]:
-            for n_top_genes in SEARCH_SPACE["n_top_genes"]:
-                for n_genes_de_gene_overlap in SEARCH_SPACE["n_genes_de_gene_overlap"]:
-                    for batch_size in SEARCH_SPACE["batch_size"]:
-                        for tau in SEARCH_SPACE["tau"]:
-                            for epsilon in SEARCH_SPACE["epsilon"]:
-                                version = f"{query}+{ref}"
-                                for k, v in [
-                                    ("n_top_genes", n_top_genes),
-                                    (
-                                        "n_genes_de_gene_overlap",
-                                        n_genes_de_gene_overlap,
-                                    ),
-                                    ("batch_size", batch_size),
-                                    ("tau", tau),
-                                    ("epsilon", epsilon),
-                                ]:
-                                    if len(SEARCH_SPACE[k]) > 1:
-                                        version += f"+{k}={v}"
-                                job_script = JOB_SCRIPT.format(
-                                    version=version,
-                                    query_dataset=query,
-                                    ref_dataset=ref,
-                                    n_top_genes=n_top_genes,
-                                    n_genes_de_gene_overlap=n_genes_de_gene_overlap,
-                                    batch_size=batch_size,
-                                    tau=tau,
-                                    epsilon=epsilon,
-                                )
-                                with open("job_script.sbatch", "w") as f:
-                                    f.write(job_script)
-                                os.system("sbatch job_script.sbatch")
-                                sleep(0.5)
-                                os.system("rm job_script.sbatch")
+    for (
+        query,
+        ref,
+        n_top_genes,
+        n_genes_correlation,
+        n_genes_de_gene_overlap,
+        batch_size,
+        tau,
+        epsilon,
+    ) in product(
+        SEARCH_SPACE["query"]["values"],
+        SEARCH_SPACE["ref"]["values"],
+        SEARCH_SPACE["n_top_genes"]["values"],
+        SEARCH_SPACE["n_genes_correlation"]["values"],
+        SEARCH_SPACE["n_genes_de_gene_overlap"]["values"],
+        SEARCH_SPACE["batch_size"]["values"],
+        SEARCH_SPACE["tau"]["values"],
+        SEARCH_SPACE["epsilon"]["values"],
+    ):
+        version = []
+        for k, v in [
+            ("query", query),
+            ("ref", ref),
+            ("n_top_genes", n_top_genes),
+            ("n_genes_correlation", n_genes_correlation),
+            ("n_genes_de_gene_overlap", n_genes_de_gene_overlap),
+            ("batch_size", batch_size),
+            ("tau", tau),
+            ("epsilon", epsilon),
+        ]:
+            if SEARCH_SPACE[k]["include_in_version"]:
+                version.append(v if k in ["query", "ref"] else f"{k}={v}")
+
+        job_script = JOB_SCRIPT.format(
+            version="+".join(version),
+            query_dataset=query,
+            ref_dataset=ref,
+            n_top_genes=n_top_genes,
+            n_genes_de_gene_overlap=n_genes_de_gene_overlap,
+            batch_size=batch_size,
+            tau=tau,
+            epsilon=epsilon,
+        )
+        with open("job_script.sbatch", "w") as f:
+            f.write(job_script)
+        os.system("sbatch job_script.sbatch && sleep 0.5 && rm job_script.sbatch")
