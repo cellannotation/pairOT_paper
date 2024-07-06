@@ -15,6 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", type=str)
     parser.add_argument("--n_top_genes", type=int, default=3000)
+    parser.add_argument("--n_genes_correlation", type=int, default=1000)
     parser.add_argument("--n_genes_de_gene_overlap", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=1024)
     parser.add_argument("--tau", type=float, default=1.0)
@@ -51,6 +52,7 @@ if __name__ == "__main__":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             dataset_map.init_geom(
+                n_genes_correlation=args.n_genes_correlation,
                 n_genes_de_gene_overlap=args.n_genes_de_gene_overlap,
                 batch_size=args.batch_size,
                 epsilon=args.epsilon,
