@@ -1,4 +1,5 @@
 import pickle
+import warnings
 from typing import Dict, Tuple, Optional, List, Literal
 
 import anndata
@@ -73,6 +74,24 @@ def _get_label_frequency(cell_type_labels: pd.Series, subset: np.ndarray) -> pd.
         .cat.remove_unused_categories()
         .value_counts(normalize=True)
     )
+
+
+def _get_shared_highly_variable_genes(
+    adata1: anndata.AnnData, adata2: anndata.AnnData, n_top_genes: int
+):
+    adata = anndata.concat([adata1, adata2], label="dataset", keys=["query", "ref"])
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    highly_variable = sc.pp.highly_variable_genes(
+        adata, n_top_genes=n_top_genes, batch_key="dataset", inplace=False
+    )
+    size_hvg_intersection = highly_variable["highly_variable_intersection"].sum()
+    if size_hvg_intersection < n_top_genes:
+        warnings.warn(
+            f"Only {size_hvg_intersection} of {n_top_genes} genes are highly variable in both datasets."
+        )
+
+    return highly_variable["highly_variable"].to_numpy()
 
 
 def _predict_from_marginals(
@@ -150,6 +169,7 @@ class DatasetMapping:
     def _validate_input(adata1: anndata.AnnData, adata2: anndata.AnnData):
         assert "cell_type_author" in adata1.obs.columns
         assert "cell_type_author" in adata2.obs.columns
+        assert adata1.var.index.equals(adata2.var.index)
         for adata in [adata1, adata2]:
             assert adata.obs.cell_type_author.dtype == "category"
             assert np.allclose(
@@ -180,7 +200,7 @@ class DatasetMapping:
     def preprocess_adatas(
         adata1: anndata.AnnData,
         adata2: anndata.AnnData,
-        n_top_genes: int = 2000,
+        n_top_genes: int = 3000,
     ) -> Tuple[anndata.AnnData, anndata.AnnData]:
         """
         Subset the input anndata.AnnData object to the top `n_top_genes` highly variable genes.
@@ -191,8 +211,8 @@ class DatasetMapping:
             Query data.
         adata2: anndata.AnnData
             Reference data.
-        n_top_genes: int = 2000
-            Number of highly variable genes to use.
+        n_top_genes: int = 3000
+            Number of highly variable genes to select.
 
         Returns
         -------
@@ -203,11 +223,7 @@ class DatasetMapping:
         adata1 = adata1[:, intersection_genes]
         adata2 = adata2[:, intersection_genes]
         # subset to highly variable genes
-        adata = anndata.concat([adata1, adata2], label="dataset", keys=["query", "ref"])
-        sc.pp.normalize_total(adata, target_sum=1e4)
-        sc.pp.log1p(adata)
-        sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, batch_key="dataset")
-        highly_variable = adata.var["highly_variable"].to_numpy().copy()
+        highly_variable = _get_shared_highly_variable_genes(adata1, adata2, n_top_genes)
 
         return adata1[:, highly_variable].copy(), adata2[:, highly_variable].copy()
 
@@ -243,10 +259,18 @@ class DatasetMapping:
 
         return jnp.array(label_distance_ordered.astype("f4"))
 
-    def _preprocess_data(self, embedding_layer: str = None):
+    def _preprocess_data(
+        self, n_genes_correlation: Optional[int] = 1000, embedding_layer: str = None
+    ):
         adata1 = self.adata1
         adata2 = self.adata2
         if embedding_layer is None:
+            if n_genes_correlation and n_genes_correlation < adata1.n_vars:
+                highly_variable = _get_shared_highly_variable_genes(
+                    adata1, adata2, n_genes_correlation
+                )
+                adata1 = adata1[:, highly_variable]
+                adata2 = adata2[:, highly_variable]
             x1 = _convert_to_dense_numpy(adata1.X)
             x2 = _convert_to_dense_numpy(adata2.X)
             # rank and zero center data that cosine similarity is equal to Spearman correlation
@@ -268,9 +292,11 @@ class DatasetMapping:
         self,
         lambda_feature: float = 1.0,
         lambda_label: float = 1.0,
-        n_genes_de_gene_overlap: int = 15,
+        n_genes_correlation: Optional[int] = 1000,
+        n_genes_de_gene_overlap: int = 10,
         de_method: _Method = "wilcoxon",
         p_value_threshold: float = 0.01,
+        embedding_layer: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -282,18 +308,29 @@ class DatasetMapping:
         lambda_feature: float = 1.0
             Weight for the distance in gene/feature space for the cell to cell transport cost.
         lambda_label: float = 1.0
-            Weight for the distance in the label space for the cell to cell transport cost.
-        n_genes_de_gene_overlap: int = 15
+            Weight for the distance in label space for the cell to cell transport cost.
+        n_genes_correlation: Optional[int] = 1000
+            Number of top n highly variable genes used to calculate the Spearman correlation between two cells.
+            If `None`, all genes are used.
+            This parameter is ignored, if an `embedding_layer` is provided.
+        n_genes_de_gene_overlap: int = 10
             Number of genes used to calculate overlap of top differentially expressed genes.
         de_method: Literal["logreg", "t-test", "wilcoxon", "t-test_overestim_var"] = "wilcoxon"
             Method used to calculate differentially expressed genes.
             See sc.tl.rank_genes_groups for more details.
         p_value_threshold: float = 0.01
             Minimum p-value to consider a gene as differentially expressed.
+        embedding_layer: Optional[str] = None
+            Name of the embedding layer in `adata1.obsm` and `adata1.obsm` used to calculate the distance between
+            two cells.
+            If this parameter is provided, the distance between two cells is calculated as the cosine distance in
+            embedding space instead of the Spearman correlation in the full gene space.
         kwargs: Dict[str, Any]
             Keyword arguments passed to :class:`ott.geometry.pointcloud.PointCloud`.
         """
-        x, y = self._preprocess_data()
+        x, y = self._preprocess_data(
+            n_genes_correlation=n_genes_correlation, embedding_layer=embedding_layer
+        )
         label_distance = self._compute_label_distances(
             n_genes=n_genes_de_gene_overlap,
             de_method=de_method,
