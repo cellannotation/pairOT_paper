@@ -31,6 +31,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
     save_dir = join("/mnt/dssfs02/dataset-similarity/models/CellHint", args.version)
     fig_dir = join("/mnt/dssfs02/dataset-similarity/figures/CellHint", args.version)
     os.makedirs(save_dir, exist_ok=True), os.makedirs(fig_dir, exist_ok=True)

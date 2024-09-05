@@ -35,21 +35,20 @@ srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
 
 SEARCH_SPACE = {
     "query": {
-        "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
+        "values": [
+            "0c8a364b-97b5-4cc8-a593-23c38c6f0ac5",
+            "0f528c8a-a25c-4840-8fa3-d156fa11086f",
+            "2d40e6a7-f2fd-49ba-9db9-6b97e4c6dad5",
+            "2d40e6a7-f2fd-49ba-9db9-6b97e4c6dad5_Immune",
+            "48259aa8-f168-4bf5-b797-af8e88da6637_Immune",
+            "5c868b6f-62c5-4532-9d7f-a346ad4b50a7",
+            "71f4bccf-53d4-4c12-9e80-e73bfb89e398",
+            "f6c50495-3361-40ed-a819-fb9644396ed9",
+        ],
         "include_in_version": True,
     },
     "ref": {
-        "values": [
-            "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
-            "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
-            "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
-            "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
-            "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
-            "ced320a1-29f3-47c1-a735-513c7084d508",
-            "ddfad306-714d-4cc0-9985-d9072820c530",
-            "eb735cc9-d0a7-48fa-b255-db726bf365af",
-            "ed9185e3-5b82-40c7-9824-b2141590c7f0",
-        ],
+        "values": ["ced320a1-29f3-47c1-a735-513c7084d508"],
         "include_in_version": True,
     },
     "n_top_genes": {"values": [3000], "include_in_version": False},

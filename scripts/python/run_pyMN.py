@@ -27,6 +27,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
     save_dir = join("/mnt/dssfs02/dataset-similarity/models/pyMN", args.version)
     fig_dir = join("/mnt/dssfs02/dataset-similarity/figures/pyMN", args.version)
     os.makedirs(save_dir, exist_ok=True), os.makedirs(fig_dir, exist_ok=True)

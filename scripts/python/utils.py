@@ -8,6 +8,13 @@ import scanpy as sc
 from datasim.dataset_ot import DatasetMapping
 
 
+def none_or_str(value: str):
+    if value.lower() == "none":
+        return None
+    else:
+        return value
+
+
 def load_data_cached(
     cache_dir: str,
     data_path: str,
@@ -31,12 +38,7 @@ def load_data_cached(
             sc.read_h5ad(join(data_path, f"{ref_dataset}.h5ad")),
             n_top_genes=n_top_genes,
         )
-        with open(cache_file, "wb") as f:
-            pickle.dump((adata_query, adata_ref), f)
 
-    # for all the other datasets the default column is already "cell_type_author"
-    if query_dataset == "7d7cabfd-1d1f-40af-96b7-26a0825a306d" and ct_col_query is None:
-        adata_query.obs["cell_type_author"] = adata_query.obs["ct2"]
     if ct_col_query is not None:
         adata_query.obs["cell_type_author"] = adata_query.obs[ct_col_query]
     gc.collect()
