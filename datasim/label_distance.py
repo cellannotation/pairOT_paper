@@ -1,66 +1,44 @@
-from typing import Dict, Union
+from typing import Literal
 
 import anndata
 import numpy as np
 import pandas as pd
-from scanpy.tools._rank_genes_groups import _Method
-from scipy.linalg import sqrtm
 from scipy.sparse import csr_matrix
-from scipy.spatial.distance import sqeuclidean
 from scipy.stats import spearmanr
 from tqdm.notebook import tqdm
 
-from datasim.utils import get_differentially_expressed_genes
+from datasim.de_testing.selection import (
+    select_and_combine_de_results,
+    sort_and_filter_de_genes_ova,
+    sort_and_filter_de_genes_ava,
+)
+from datasim.utils import (
+    _bures_wasserstein,
+    _calc_cov,
+    _calc_mean,
+    _calc_scaled_jaccard,
+)
 
 
-def _bures_wasserstein(
-    mean1: np.ndarray, mean2: np.ndarray, cov1: np.ndarray, cov2: np.ndarray
-) -> float:
-    """Compute the Bures-Wasserstein cost between two normal distributions N(mean, cov)."""
-    sqrt_cov1 = sqrtm(cov1)
-    bures = np.trace(
-        cov1 + cov2 - 2 * sqrtm(np.matmul(np.matmul(sqrt_cov1, cov2), sqrt_cov1))
-    )
-    return sqeuclidean(mean1, mean2) + np.real(bures)
+def _check_dimensions(x1, x2, cell_type_labels_1, cell_type_labels_2):
+    assert x1.shape[1] == x2.shape[1]
+    assert x1.shape[0] == len(cell_type_labels_1)
+    assert x2.shape[0] == len(cell_type_labels_2)
 
 
-def _calc_cov(
-    x_embed: np.ndarray, cell_type_labels: np.ndarray
-) -> Dict[str, np.ndarray]:
-    """Compute per cell-type covariance matrices."""
-    return {
-        ct: np.cov(x_embed[cell_type_labels == ct], rowvar=False)
-        for ct in np.unique(cell_type_labels)
-    }
-
-
-def _calc_mean(
-    x_embed: Union[np.ndarray, csr_matrix], cell_type_labels: np.ndarray
-) -> Dict[str, np.ndarray]:
-    """Compute per cell-type mean vectors."""
-    return {
-        ct: np.array(
-            x_embed[cell_type_labels == ct].mean(axis=0)
-        )  # wrap with np.array in case input matrix is sparse
-        for ct in np.unique(cell_type_labels)
-    }
-
-
-def _calc_jaccard(markers1: Dict[str, set], markers2: Dict[str, set]) -> np.ndarray:
-    """
-    Calculate jaccard index between the values of two dictionaries.
-    """
-    jacc_results = np.zeros((len(markers1), len(markers2)))
-
-    for j, marker_group in enumerate(markers1):
-        tmp = [
-            len(markers2[i].intersection(markers1[marker_group]))
-            / len(markers2[i].union(markers1[marker_group]))
-            for i in markers2.keys()
-        ]
-        jacc_results[j, :] = tmp
-
-    return jacc_results
+def _check_de_results(adata: anndata.AnnData, cell_type_column: str):
+    ct_labels = adata.obs[cell_type_column].unique()
+    # Check if all OVA DE results are present
+    for ct in ct_labels:
+        if ct not in adata.uns["de_res_ova"]:
+            raise ValueError(f"OVA DE results for {ct} missing in adata object.")
+    # Check if all AVA DE results are present
+    for ct1 in ct_labels:
+        for ct2 in ct_labels:
+            if ct1 != ct2 and ct2 not in adata.uns["de_res_ava"][ct1]:
+                raise ValueError(
+                    f"AVA DE results for {ct1} vs {ct2} missing in adata object."
+                )
 
 
 def bures_wasserstein_label_distance(
@@ -70,9 +48,7 @@ def bures_wasserstein_label_distance(
     cell_type_labels_2: np.ndarray,
 ) -> pd.DataFrame:
     """Compute the Bures-Wasserstein distance matrix between cell-type labels."""
-    assert x_embed_1.shape[1] == x_embed_2.shape[1]
-    assert x_embed_1.shape[0] == len(cell_type_labels_1)
-    assert x_embed_2.shape[0] == len(cell_type_labels_2)
+    _check_dimensions(x_embed_1, x_embed_2, cell_type_labels_1, cell_type_labels_2)
 
     means1 = _calc_mean(x_embed_1, cell_type_labels_1)
     means2 = _calc_mean(x_embed_2, cell_type_labels_2)
@@ -87,7 +63,7 @@ def bures_wasserstein_label_distance(
                 bures_wasserstein_dist_mtx[i, j] = _bures_wasserstein(
                     means1[label1], means2[label2], cov1[label1], cov2[label2]
                 )
-                pbar.update(1)
+                pbar.update()
 
     return pd.DataFrame(data=bures_wasserstein_dist_mtx, index=labels1, columns=labels2)
 
@@ -99,14 +75,13 @@ def spearmanr_label_distance(
     cell_type_labels_2: np.ndarray,
 ) -> pd.DataFrame:
     """Compute the SpearmanR distance matrix between cell-type labels."""
-    assert x1.shape[1] == x2.shape[1]
-    assert x1.shape[0] == len(cell_type_labels_1)
-    assert x2.shape[0] == len(cell_type_labels_2)
+    _check_dimensions(x1, x2, cell_type_labels_1, cell_type_labels_2)
 
     means1 = _calc_mean(x1, cell_type_labels_1)
     means2 = _calc_mean(x2, cell_type_labels_2)
     labels1 = list(means1.keys())
     labels2 = list(means2.keys())
+    # noinspection PyTypeChecker
     spearman_corr = spearmanr(
         np.vstack([means1[k] for k in labels1]),
         np.vstack([means2[k] for k in labels2]),
@@ -120,38 +95,63 @@ def de_gene_overlap_label_distance(
     adata1: anndata.AnnData,
     adata2: anndata.AnnData,
     cell_type_column: str,
-    n_genes: int = 15,
-    method: _Method = "wilcoxon",
-    p_value_threshold: float = 0.01,
+    n_genes_adata1_ova: int = 10,
+    n_genes_adata2_ova: int = 20,
+    n_genes_adata1_ava: int = 3,
+    n_genes_adata2_ava: int = 3,
+    overlap_threshold_ava: float = 0.1,
+    overlap_n_genes_ava: int = 10,
+    adj_p_val_threshold: float = 0.05,
+    auroc_threshold_ova: float = 0.5,
+    gene_filtering: Literal[
+        "standard",
+        "strict-pegasus-immune",
+        "strict-villani-immune",
+        "strict-villani-bonemarrow",
+        None,
+    ] = "standard",
 ) -> pd.DataFrame:
     """Compute cell-type label distance matrix based on overlap of differentially expressed genes between clusters."""
-    assert cell_type_column in adata1.obs.columns
-    assert cell_type_column in adata2.obs.columns
+    _check_de_results(adata1, cell_type_column)
+    _check_de_results(adata2, cell_type_column)
 
-    de_res_adata1 = get_differentially_expressed_genes(
-        adata1,
-        cell_type_col=cell_type_column,
-        n_genes=n_genes,
-        method=method,
-        p_value_threshold=p_value_threshold,
+    de_genes_adata1 = select_and_combine_de_results(
+        sort_and_filter_de_genes_ova(
+            adata1.uns["de_res_ova"],
+            aucroc_threshold=auroc_threshold_ova,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        sort_and_filter_de_genes_ava(
+            adata1.uns["de_res_ava"],
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        n_genes_ova=n_genes_adata1_ova,
+        n_genes_ava=n_genes_adata1_ava,
+        overlap_threshold=overlap_threshold_ava,
+        overlap_n_genes=overlap_n_genes_ava,
     )
-    de_res_adata2 = get_differentially_expressed_genes(
-        adata2,
-        cell_type_col=cell_type_column,
-        n_genes=n_genes,
-        method=method,
-        p_value_threshold=p_value_threshold,
+    de_genes_adata2 = select_and_combine_de_results(
+        sort_and_filter_de_genes_ova(
+            adata2.uns["de_res_ova"],
+            aucroc_threshold=auroc_threshold_ova,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        sort_and_filter_de_genes_ava(
+            adata2.uns["de_res_ava"],
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        n_genes_ova=n_genes_adata2_ova,
+        n_genes_ava=n_genes_adata2_ava,
+        overlap_threshold=overlap_threshold_ava,
+        overlap_n_genes=overlap_n_genes_ava,
     )
-    de_genes_adata1 = {
-        ct: set(de_res_adata1[ct]["gene"]) for ct in de_res_adata1.keys()
-    }
-    de_genes_adata2 = {
-        ct: set(de_res_adata2[ct]["gene"]) for ct in de_res_adata2.keys()
-    }
-    de_gene_overlap = pd.DataFrame(
-        _calc_jaccard(de_genes_adata2, de_genes_adata1),
-        index=list(de_genes_adata2.keys()),
-        columns=list(de_genes_adata1.keys()),
+    jaccard = _calc_scaled_jaccard(
+        {ct: set(de_genes_adata1[ct].index) for ct in de_genes_adata1.keys()},
+        {ct: set(de_genes_adata2[ct].index) for ct in de_genes_adata2.keys()},
     )
-    # use Jaccard distance to measure overlap (optimal transport needs a distance)
-    return 1.0 - de_gene_overlap
+
+    return 1.0 - jaccard

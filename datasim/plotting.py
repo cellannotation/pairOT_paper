@@ -32,9 +32,10 @@ def plot_cluster_mapping(
     height: Optional[int] = None,
     zmin: Optional[float] = None,
     zmax: Optional[float] = None,
+    colormap: str = "Greens",
     show: bool = True,
 ):
-    fig = _plot_heatmap(data, "Greens", width, height, zmin=zmin, zmax=zmax)
+    fig = _plot_heatmap(data, colormap, width, height, zmin=zmin, zmax=zmax)
     if show:
         fig.show()
         return None
