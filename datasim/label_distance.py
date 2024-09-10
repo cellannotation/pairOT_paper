@@ -102,7 +102,7 @@ def de_gene_overlap_label_distance(
     overlap_threshold_ava: float = 0.1,
     overlap_n_genes_ava: int = 10,
     adj_p_val_threshold: float = 0.05,
-    auroc_threshold_ova: float = 0.5,
+    auroc_threshold: float = 0.5,
     gene_filtering: Literal[
         "standard",
         "strict-pegasus-immune",
@@ -118,12 +118,13 @@ def de_gene_overlap_label_distance(
     de_genes_adata1 = select_and_combine_de_results(
         sort_and_filter_de_genes_ova(
             adata1.uns["de_res_ova"],
-            aucroc_threshold=auroc_threshold_ova,
+            aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
             gene_filtering=gene_filtering,
         ),
         sort_and_filter_de_genes_ava(
             adata1.uns["de_res_ava"],
+            aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
             gene_filtering=gene_filtering,
         ),
@@ -135,12 +136,13 @@ def de_gene_overlap_label_distance(
     de_genes_adata2 = select_and_combine_de_results(
         sort_and_filter_de_genes_ova(
             adata2.uns["de_res_ova"],
-            aucroc_threshold=auroc_threshold_ova,
+            aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
             gene_filtering=gene_filtering,
         ),
         sort_and_filter_de_genes_ava(
             adata2.uns["de_res_ava"],
+            aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
             gene_filtering=gene_filtering,
         ),

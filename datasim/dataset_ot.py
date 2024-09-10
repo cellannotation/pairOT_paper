@@ -239,7 +239,7 @@ class DatasetMapping:
         overlap_threshold_ava: float = 0.1,
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
-        auroc_threshold_ova: float = 0.5,
+        auroc_threshold: float = 0.5,
         gene_filtering: Literal[
             "standard",
             "strict-pegasus-immune",
@@ -268,7 +268,7 @@ class DatasetMapping:
                     overlap_threshold_ava=overlap_threshold_ava,
                     overlap_n_genes_ava=overlap_n_genes_ava,
                     adj_p_val_threshold=adj_p_val_threshold,
-                    auroc_threshold_ova=auroc_threshold_ova,
+                    auroc_threshold=auroc_threshold,
                     gene_filtering=gene_filtering,
                 )
             )
@@ -316,7 +316,7 @@ class DatasetMapping:
         overlap_threshold_ava: float = 0.1,
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
-        auroc_threshold_ova: float = 0.5,
+        auroc_threshold: float = 0.5,
         gene_filtering: Literal[
             "standard",
             "strict-pegasus-immune",
@@ -358,7 +358,7 @@ class DatasetMapping:
             results to include.
         adj_p_val_threshold: float = 0.05
             Minimum adjusted p-value to consider a gene as differentially expressed.
-        auroc_threshold_ova: float = 0.5
+        auroc_threshold: float = 0.5
             Minimum AUROC score to consider a gene as differentially expressed.
         gene_filtering: Literal = "standard"
             Type of gene filtering to apply to the DE results.
@@ -379,7 +379,7 @@ class DatasetMapping:
             overlap_threshold_ava=overlap_threshold_ava,
             overlap_n_genes_ava=overlap_n_genes_ava,
             adj_p_val_threshold=adj_p_val_threshold,
-            auroc_threshold_ova=auroc_threshold_ova,
+            auroc_threshold=auroc_threshold,
             gene_filtering=gene_filtering,
         )
         self.geom = pointcloud.PointCloud(
