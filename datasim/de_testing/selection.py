@@ -71,6 +71,7 @@ def sort_and_filter_de_genes_ova(
 
 def sort_and_filter_de_genes_ava(
     de_res: Dict[str, Dict[str, pd.DataFrame]],
+    aucroc_threshold: float = 0.5,
     adj_pval_threshold: float = 0.05,
     gene_filtering: Literal[
         "standard",
@@ -95,6 +96,7 @@ def sort_and_filter_de_genes_ava(
                     .sort_values("logFC", ascending=False)
                     .query(f"`logFC` >= 1.")
                     .query(f"`adj.P.Val` <= {adj_pval_threshold}")
+                    .query(f"`auroc` >= {aucroc_threshold}")
                     .copy()
                 )
 

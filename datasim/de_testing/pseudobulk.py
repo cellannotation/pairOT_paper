@@ -7,12 +7,15 @@ from typing import Dict, Iterable
 import anndata
 import numpy as np
 import pandas as pd
-import pegasus as pg
 import rpy2.robjects as ro
 import scanpy as sc
+import tqdm
+from joblib import Parallel, delayed, parallel_backend
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
 from scipy.sparse import csr_matrix
+
+from datasim.de_testing.auroc import calc_auroc, csr_to_csc
 
 INSTALL_R_PACKAGES = """
 if (!require("BiocManager", quietly = TRUE))
@@ -101,6 +104,118 @@ de_ava <- rbindlist(lapply(colnames(cont), function(this_coef) {
 """
 
 
+def _eff_n_jobs(n_jobs: int) -> int:
+    """If n_jobs < 0, set it as the number of physical cores _cpu_count"""
+    if n_jobs > 0:
+        return n_jobs
+
+    import psutil
+
+    _cpu_count = psutil.cpu_count(logical=False)
+    if _cpu_count is None:
+        _cpu_count = psutil.cpu_count()
+
+    return _cpu_count
+
+
+def _calc_auroc(
+    x: csr_matrix,
+    cluster_labels: pd.Series,
+    gene_names: pd.Series,
+    n_jobs: int = 1,
+) -> np.array:
+    n_jobs = _eff_n_jobs(n_jobs)
+    if not isinstance(cluster_labels.dtype, pd.CategoricalDtype):
+        cluster_labels = cluster_labels.astype("category")
+    cluster_labels = cluster_labels.values
+    data, indices, indptr = csr_to_csc(
+        x.data,
+        x.indices,
+        x.indptr,
+        x.shape[0],
+        x.shape[1],
+        np.argsort(cluster_labels.codes),
+    )
+    cluster_cnts = cluster_labels.value_counts()
+    n1arr = cluster_cnts.values
+    n2arr = x.shape[0] - n1arr
+    cluster_cumsum = cluster_cnts.cumsum().values
+
+    first_j, second_j = -1, -1
+    posvec = np.where(n1arr > 0)[0]
+    if len(posvec) == 2:
+        first_j = posvec[0]
+        second_j = posvec[1]
+
+    quotient = x.shape[1] // n_jobs
+    residue = x.shape[1] % n_jobs
+    intervals = []
+    start_pos, end_pos = 0, 0
+    for i in range(n_jobs):
+        end_pos = start_pos + quotient + (i < residue)
+        if end_pos == start_pos:
+            break
+        intervals.append((start_pos, end_pos))
+        start_pos = end_pos
+
+    with parallel_backend("loky", inner_max_num_threads=1):
+        result_list = Parallel(n_jobs=len(intervals), temp_folder=None)(
+            delayed(calc_auroc)(
+                start_pos,
+                end_pos,
+                data,
+                indices,
+                indptr,
+                n1arr,
+                n2arr,
+                cluster_cumsum,
+                first_j,
+                second_j,
+            )
+            for start_pos, end_pos in intervals
+        )
+
+    return pd.DataFrame(
+        np.concatenate(result_list, axis=0),
+        index=gene_names.values,
+        columns=[f"{x}:auroc" for x in cluster_labels.categories],
+    )
+
+
+def _get_auroc_scores_ova(
+    x: csr_matrix, cluster_labels: pd.Series, gene_names: pd.Series
+) -> Dict[str, pd.Series]:
+    auroc_scores = _calc_auroc(x, cluster_labels, gene_names)
+    return {ct: auroc_scores[f"{ct}:auroc"] for ct in cluster_labels.unique()}
+
+
+def _get_auroc_scores_ava(
+    x: csr_matrix, cluster_labels: pd.Series, gene_names: pd.Series
+) -> Dict[str, Dict[str, pd.DataFrame]]:
+    clusters = sorted(cluster_labels.unique())
+    n_clusters = len(clusters)
+    auroc_scores = {ct: {} for ct in clusters}
+    with tqdm.tqdm(
+        total=int(n_clusters * (n_clusters - 1) / 2),
+        desc="Calculating AVA AUROC scores",
+    ) as pbar:
+        for i in range(n_clusters):
+            for j in range(i + 1, n_clusters):
+                ct1, ct2 = clusters[i], clusters[j]
+                scores_subset = _get_auroc_scores_ova(
+                    x[cluster_labels.isin([ct1, ct2]), :],
+                    cluster_labels[
+                        cluster_labels.isin([ct1, ct2])
+                    ].cat.remove_unused_categories(),
+                    gene_names,
+                )
+                auroc_scores[ct1][ct2] = scores_subset[ct1]
+                auroc_scores[ct2][ct1] = scores_subset[ct2]
+                pbar.update()
+
+    return auroc_scores
+
+
 def _extract_ova_de_results(
     ova_vals, cluster_labels: Iterable[str], mapping: Dict[str, str]
 ) -> Dict[str, pd.DataFrame]:
@@ -140,29 +255,16 @@ def _extract_ava_de_results(
     return de_res_ava_
 
 
-def _get_auroc_scores(
-    adata_raw: anndata.AnnData, cell_type_col: str
-) -> Dict[str, pd.DataFrame]:
-    pg.de_analysis(adata_raw, cluster=cell_type_col)
-    pg_markers = pg.markers(adata_raw, alpha=np.inf)
-    auroc_scores = {
-        ct: pd.concat(
-            [
-                pg_markers[ct]["up"]["auroc"],
-                pg_markers[ct]["down"]["auroc"],
-            ]
-        )
-        for ct in adata_raw.obs[cell_type_col].unique()
-    }
-
-    return auroc_scores
-
-
 def calc_pseudobulk_stats(
     adata: anndata.AnnData,
     cluster_label: str = "cell_type_author",
     sample_label: str = "sample_id",
 ):
+    if not isinstance(adata.X, csr_matrix):
+        adata.X = csr_matrix(adata.X)
+    if not adata.obs[cluster_label].dtype.name == "category":
+        adata.obs[cluster_label] = adata.obs[cluster_label].astype("category")
+
     save_path = "pseudobulk/"
     save_name = "pseudobulk"
     # Replace cluster labels with int labels. Otherwise, R code below won't work
@@ -231,9 +333,20 @@ def calc_pseudobulk_stats(
     adata.obs[cluster_label] = (
         adata.obs[cluster_label].astype(str).replace(inverse_mapping).astype("category")
     )
-    # calculate AUROC scores with pegasus for OVA results
-    auroc_scores = _get_auroc_scores(adata, cluster_label)
+    # calculate AUROC scores for OVA results
+    # noinspection PyTypeChecker
+    auroc_scores_ova = _get_auroc_scores_ova(
+        adata.X, adata.obs[cluster_label], adata.var.index.to_series()
+    )
     for ct, de_df in de_res_ova.items():
-        de_df["auroc"] = auroc_scores[ct]
+        de_df["auroc"] = auroc_scores_ova[ct]
+    # calculate AUROC scores for AVA results
+    # noinspection PyTypeChecker
+    auroc_scores_ava = _get_auroc_scores_ava(
+        adata.X, adata.obs[cluster_label], adata.var.index.to_series()
+    )
+    for ct1, de_res in de_res_ava.items():
+        for ct2, de_df in de_res.items():
+            de_df["auroc"] = auroc_scores_ava[ct1][ct2]
 
     return de_res_ova, de_res_ava
