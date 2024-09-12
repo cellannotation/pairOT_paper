@@ -12,8 +12,10 @@ def preprocess_adatas(
     adata1: anndata.AnnData,
     adata2: anndata.AnnData,
     n_top_genes: int = 750,
-    cell_type_column: str = "cell_type_author",
-    sample_column: str = "sample_id",
+    cell_type_column_adata1: str = "cell_type_author",
+    cell_type_column_adata2: str = "cell_type_author",
+    sample_column_adata1: str = "sample_id",
+    sample_column_adata2: str = "sample_id",
 ) -> Tuple[anndata.AnnData, anndata.AnnData]:
     """
     Do the following preprocessing steps:
@@ -29,10 +31,14 @@ def preprocess_adatas(
         Reference data.
     n_top_genes: int = 750
         Number of highly variable genes to use to calculate the Spearman correlation between two cells.
-    cell_type_column: str = "cell_type_author"
-        Name of the column in `adata.obs` that contains the cell type labels.
-    sample_column: str = "sample_id"
-        Name of the column in `adata.obs` that contains the sequencing sample ids/labels.
+    cell_type_column_adata1: str = "cell_type_author"
+        Name of the column in `adata.obs` that contains the cell type labels for adata1.
+    cell_type_column_adata2: str = "cell_type_author"
+        Name of the column in `adata.obs` that contains the cell type labels for adata2.
+    sample_column_adata1: str = "sample_id"
+        Name of the column in `adata.obs` that contains the sequencing sample ids/labels for adata1.
+    sample_column_adata2: str = "sample_id"
+        Name of the column in `adata.obs` that contains the sequencing sample ids/labels for adata1.
 
     Returns
     -------
@@ -40,10 +46,10 @@ def preprocess_adatas(
     """
     from datasim.de_testing.pseudobulk import calc_pseudobulk_stats
 
-    adata1.obs["cell_type_author"] = adata1.obs[cell_type_column]
-    adata1.obs["sample_id"] = adata1.obs[sample_column]
-    adata2.obs["cell_type_author"] = adata2.obs[cell_type_column]
-    adata2.obs["sample_id"] = adata2.obs[sample_column]
+    adata1.obs["cell_type_author"] = adata1.obs[cell_type_column_adata1]
+    adata1.obs["sample_id"] = adata1.obs[sample_column_adata1]
+    adata2.obs["cell_type_author"] = adata2.obs[cell_type_column_adata2]
+    adata2.obs["sample_id"] = adata2.obs[sample_column_adata2]
     # subset gene space to genes that are expressed in both datasets
     intersection_genes = get_expressed_genes_intersection(adata1, adata2, min_counts=10)
     adata1 = adata1[:, intersection_genes].copy()

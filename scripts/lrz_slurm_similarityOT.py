@@ -40,43 +40,43 @@ srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
 
 
 SEARCH_SPACE = {
-    "query": {
-        "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
-        "include_in_version": True,
-    },
-    "ref": {
-        "values": [
-            "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
-            "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
-            "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
-            "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
-            "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
-            "ced320a1-29f3-47c1-a735-513c7084d508",
-            "ddfad306-714d-4cc0-9985-d9072820c530",
-            "eb735cc9-d0a7-48fa-b255-db726bf365af",
-            "ed9185e3-5b82-40c7-9824-b2141590c7f0",
-        ],
-        "include_in_version": True,
-    },
-    "n_top_genes": {"values": [750], "include_in_version": True},
-    "n_genes_query_ova": {
-        "values": [10],
-        "include_in_version": True,
-    },
-    "n_genes_ref_ova": {
-        "values": [20],
-        "include_in_version": True,
-    },
-    "batch_size": {"values": [4096], "include_in_version": False},
-    "tau": {"values": [1.0], "include_in_version": True},
-    "epsilon": {
-        "values": [0.05, 0.1],
-        "include_in_version": True,
-    },
-    "embedding_layer": {
-        "values": [None],
-        "include_in_version": True,
-    },
+    # "query": {
+    #     "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
+    #     "include_in_version": True,
+    # },
+    # "ref": {
+    #     "values": [
+    #         "03f821b4-87be-4ff4-b65a-b5fc00061da7_Airway",
+    #         "03f821b4-87be-4ff4-b65a-b5fc00061da7_PBMC",
+    #         "4f889ffc-d4bc-4748-905b-8eb9db47a2ed",
+    #         "b0cf0afa-ec40-4d65-b570-ed4ceacc6813",
+    #         "b9fc3d70-5a72-4479-a046-c2cc1ab19efc",
+    #         "ced320a1-29f3-47c1-a735-513c7084d508",
+    #         "ddfad306-714d-4cc0-9985-d9072820c530",
+    #         "eb735cc9-d0a7-48fa-b255-db726bf365af",
+    #         "ed9185e3-5b82-40c7-9824-b2141590c7f0",
+    #     ],
+    #     "include_in_version": True,
+    # },
+    # "n_top_genes": {"values": [750], "include_in_version": True},
+    # "n_genes_query_ova": {
+    #     "values": [10],
+    #     "include_in_version": True,
+    # },
+    # "n_genes_ref_ova": {
+    #     "values": [20],
+    #     "include_in_version": True,
+    # },
+    # "batch_size": {"values": [4096], "include_in_version": False},
+    # "tau": {"values": [1.0], "include_in_version": True},
+    # "epsilon": {
+    #     "values": [0.05, 0.1],
+    #     "include_in_version": True,
+    # },
+    # "embedding_layer": {
+    #     "values": [None],
+    #     "include_in_version": True,
+    # },
     # "query": {
     #     "values": [
     #         # "0c8a364b-97b5-4cc8-a593-23c38c6f0ac5",
@@ -110,33 +110,33 @@ SEARCH_SPACE = {
     #     "include_in_version": True,
     # },
     # "embedding_layer": {
-    #     "values": ["X_scTab", "X_scimilarity"],
+    #     "values": [None],
     #     "include_in_version": True,
     # },
-    # "query": {
-    #     "values": ["ced320a1-29f3-47c1-a735-513c7084d508"],
-    #     "include_in_version": True,
-    # },
-    # "ref": {
-    #     "values": ["f6c50495-3361-40ed-a819-fb9644396ed9"],
-    #     "include_in_version": True,
-    # },
-    # "n_top_genes": {"values": [750], "include_in_version": True},
-    # "n_genes_query_ova": {
-    #     "values": [10],
-    #     "include_in_version": True,
-    # },
-    # "n_genes_ref_ova": {
-    #     "values": [[10, 15, 20, 25, 30, 35, 40]],
-    #     "include_in_version": True,
-    # },
-    # "batch_size": {"values": [4096], "include_in_version": False},
-    # "tau": {"values": [1.0], "include_in_version": True},
-    # "epsilon": {
-    #     "values": [0.05, 0.1],
-    #     "include_in_version": True,
-    # },
-    # "embedding_layer": {"values": [None], "include_in_version": True},
+    "query": {
+        "values": ["ced320a1-29f3-47c1-a735-513c7084d508"],
+        "include_in_version": True,
+    },
+    "ref": {
+        "values": ["f6c50495-3361-40ed-a819-fb9644396ed9"],
+        "include_in_version": True,
+    },
+    "n_top_genes": {"values": [750], "include_in_version": True},
+    "n_genes_query_ova": {
+        "values": [10],
+        "include_in_version": True,
+    },
+    "n_genes_ref_ova": {
+        "values": [20],
+        "include_in_version": True,
+    },
+    "batch_size": {"values": [4096], "include_in_version": False},
+    "tau": {"values": [1.0], "include_in_version": True},
+    "epsilon": {
+        "values": [0.05, 0.1],
+        "include_in_version": True,
+    },
+    "embedding_layer": {"values": [None], "include_in_version": True},
 }
 
 
