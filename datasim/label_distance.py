@@ -102,7 +102,7 @@ def de_gene_overlap_label_distance(
     overlap_threshold_ava: float = 0.1,
     overlap_n_genes_ava: int = 10,
     adj_p_val_threshold: float = 0.05,
-    auroc_threshold: float = 0.5,
+    auroc_threshold: float = 0.6,
     gene_filtering: Literal[
         "standard",
         "strict-pegasus-immune",

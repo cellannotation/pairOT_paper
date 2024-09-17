@@ -44,7 +44,7 @@ def preprocess_adatas(
     -------
     Tuple[anndata.AnnData, anndata.AnnData]
     """
-    from datasim.de_testing.pseudobulk import calc_pseudobulk_stats
+    from datasim.de_testing.testing import calc_pseudobulk_stats
 
     adata1.obs["cell_type_author"] = adata1.obs[cell_type_column_adata1]
     adata1.obs["sample_id"] = adata1.obs[sample_column_adata1]

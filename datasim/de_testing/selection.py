@@ -41,7 +41,7 @@ def _filter_de_genes(
 
 def sort_and_filter_de_genes_ova(
     de_res: Dict[str, pd.DataFrame],
-    aucroc_threshold: float = 0.5,
+    aucroc_threshold: float = 0.6,
     adj_pval_threshold: float = 0.05,
     gene_filtering: Literal[
         "standard",
@@ -71,7 +71,7 @@ def sort_and_filter_de_genes_ova(
 
 def sort_and_filter_de_genes_ava(
     de_res: Dict[str, Dict[str, pd.DataFrame]],
-    aucroc_threshold: float = 0.5,
+    aucroc_threshold: float = 0.6,
     adj_pval_threshold: float = 0.05,
     gene_filtering: Literal[
         "standard",
@@ -127,12 +127,14 @@ def select_and_combine_de_results(
     combined_de_results = {}
     for ct, de_df_ova in de_res_ova.items():
         res = [
-            de_df_ova.head(n_genes_ova)[["logFC", "adj.P.Val"]].assign(reference="all")
+            de_df_ova.head(n_genes_ova)[["logFC", "adj.P.Val", "auroc"]].assign(
+                reference="all"
+            )
         ]
         for ct_refined in clusters_to_refine[ct]:
             res.append(
                 de_res_ava[ct][ct_refined]
-                .head(n_genes_ava)[["logFC", "adj.P.Val"]]
+                .head(n_genes_ava)[["logFC", "adj.P.Val", "auroc"]]
                 .assign(reference=ct_refined)
             )
         res = pd.concat(res).sort_values("logFC", ascending=False)
