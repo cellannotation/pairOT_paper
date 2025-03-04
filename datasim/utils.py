@@ -71,6 +71,46 @@ def _calc_scaled_jaccard(
     return soft_overlap
 
 
+def _calc_rank_distance(
+    degs_query: Dict[str, pd.DataFrame],
+    degs_ref: Dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    def prepare_deg_res(df):
+        return (
+            df.reset_index()
+            .rename(columns={"index": "gene", "ID": "gene"})
+            .sort_values("logFC", ascending=False)
+            .drop_duplicates("gene", keep="first")
+            .reset_index(drop=True)
+        )
+
+    cts_query = sorted(degs_query.keys())
+    cts_ref = sorted(degs_ref.keys())
+    degs_query = {k: v.pipe(prepare_deg_res) for k, v in degs_query.items()}
+    degs_ref = {k: v.pipe(prepare_deg_res) for k, v in degs_ref.items()}
+    distance = pd.DataFrame(
+        np.zeros((len(cts_query), len(cts_ref))), index=cts_query, columns=cts_ref
+    )
+
+    for ct_query in cts_query:
+        for ct_ref in cts_ref:
+            rank_distances = []
+            for marker in degs_query[ct_query]["gene"].values:
+                rank_query = float(
+                    degs_query[ct_query].query(f"gene == '{marker}'").index.item()
+                )
+                try:
+                    rank_ref = float(
+                        degs_ref[ct_ref].query(f"gene == '{marker}'").index.item()
+                    )
+                except ValueError:
+                    rank_ref = 250.0  # set to arbitrary high value if gene not found
+                rank_distances.append(np.abs(np.log1p(rank_query) - np.log1p(rank_ref)))
+            distance.loc[ct_query, ct_ref] = np.mean(rank_distances)
+
+    return (distance / np.quantile(distance, 0.33)).clip(upper=1.0)
+
+
 def get_expressed_genes_intersection(
     adata1: anndata.AnnData, adata2: anndata.AnnData, min_counts: float = 0.0
 ) -> List[str]:

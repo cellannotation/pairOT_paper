@@ -1,6 +1,8 @@
+from os.path import dirname, join
 from typing import Tuple
 
 import anndata
+import pandas as pd
 
 from datasim.utils import (
     get_expressed_genes_intersection,
@@ -16,6 +18,7 @@ def preprocess_adatas(
     cell_type_column_adata2: str = "cell_type_author",
     sample_column_adata1: str = "sample_id",
     sample_column_adata2: str = "sample_id",
+    filter_genes: bool = False,
 ) -> Tuple[anndata.AnnData, anndata.AnnData]:
     """
     Do the following preprocessing steps:
@@ -39,6 +42,8 @@ def preprocess_adatas(
         Name of the column in `adata.obs` that contains the sequencing sample ids/labels for adata1.
     sample_column_adata2: str = "sample_id"
         Name of the column in `adata.obs` that contains the sequencing sample ids/labels for adata1.
+    filter_genes: bool = False
+        Whether to remove uninformative genes. If true mitochondrial, ribosomal, IncRNA, TCR and BCR genes are removed.
 
     Returns
     -------
@@ -50,16 +55,42 @@ def preprocess_adatas(
     adata1.obs["sample_id"] = adata1.obs[sample_column_adata1]
     adata2.obs["cell_type_author"] = adata2.obs[cell_type_column_adata2]
     adata2.obs["sample_id"] = adata2.obs[sample_column_adata2]
+    print(f"adata1: {adata1.shape}")
+    print(f"adata2: {adata2.shape}")
+    # subset gene space only to filtered genes
+    if filter_genes:
+        print("Applying uninformative gene filtering...")
+        genes_to_filter = pd.read_csv(
+            join(dirname(__file__), "de_testing/resources/filtered-genes.csv")
+        )["feature_name"].tolist()
+        official_gene_names = pd.read_csv(
+            join(dirname(__file__), "de_testing/resources/official-genes.csv")
+        )["feature_name"].tolist()
+        adata1 = adata1[:, adata1.var.index.isin(official_gene_names)]
+        adata1 = adata1[:, ~adata1.var.index.isin(genes_to_filter)]
+        adata2 = adata2[:, adata2.var.index.isin(official_gene_names)]
+        adata2 = adata2[:, ~adata2.var.index.isin(genes_to_filter)]
+        adata1 = adata1.copy()
+        adata2 = adata2.copy()
+        print(f"adata1: {adata1.shape}")
+        print(f"adata2: {adata2.shape}")
     # subset gene space to genes that are expressed in both datasets
+    print("Sub-setting gene space to genes that are expressed in both datasets...")
     intersection_genes = get_expressed_genes_intersection(adata1, adata2, min_counts=10)
     adata1 = adata1[:, intersection_genes].copy()
     adata2 = adata2[:, intersection_genes].copy()
+    print(f"adata1: {adata1.shape}")
+    print(f"adata2: {adata2.shape}")
     # calculate DE genes
+    print("Calculating differentially-expressed genes...")
     adata1.uns["de_res_ova"], adata1.uns["de_res_ava"] = calc_pseudobulk_stats(adata1)
     adata2.uns["de_res_ova"], adata2.uns["de_res_ava"] = calc_pseudobulk_stats(adata2)
     # subset to highly variable genes for Spearman correlation
+    print("Sub-setting to highly variable genes...")
     highly_variable = get_shared_highly_variable_genes(adata1, adata2, n_top_genes)
     adata1 = adata1[:, highly_variable].copy()
     adata2 = adata2[:, highly_variable].copy()
+    print(f"adata1: {adata1.shape}")
+    print(f"adata2: {adata2.shape}")
 
     return adata1, adata2

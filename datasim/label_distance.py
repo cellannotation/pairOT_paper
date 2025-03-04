@@ -1,5 +1,3 @@
-from typing import Literal
-
 import anndata
 import numpy as np
 import pandas as pd
@@ -17,6 +15,7 @@ from datasim.utils import (
     _calc_cov,
     _calc_mean,
     _calc_scaled_jaccard,
+    _calc_rank_distance,
 )
 
 
@@ -99,17 +98,13 @@ def de_gene_overlap_label_distance(
     n_genes_adata2_ova: int = 20,
     n_genes_adata1_ava: int = 3,
     n_genes_adata2_ava: int = 3,
-    overlap_threshold_ava: float = 0.1,
+    n_genes_adata1_max: int | None = None,
+    n_genes_adata2_max: int | None = None,
+    overlap_threshold_ava: float = 0.3,
     overlap_n_genes_ava: int = 10,
     adj_p_val_threshold: float = 0.05,
     auroc_threshold: float = 0.6,
-    gene_filtering: Literal[
-        "standard",
-        "strict-pegasus-immune",
-        "strict-villani-immune",
-        "strict-villani-bonemarrow",
-        None,
-    ] = "standard",
+    gene_filtering: bool = True,
 ) -> pd.DataFrame:
     """Compute cell-type label distance matrix based on overlap of differentially expressed genes between clusters."""
     _check_de_results(adata1, cell_type_column)
@@ -130,6 +125,7 @@ def de_gene_overlap_label_distance(
         ),
         n_genes_ova=n_genes_adata1_ova,
         n_genes_ava=n_genes_adata1_ava,
+        n_genes_max=n_genes_adata1_max,
         overlap_threshold=overlap_threshold_ava,
         overlap_n_genes=overlap_n_genes_ava,
     )
@@ -148,6 +144,7 @@ def de_gene_overlap_label_distance(
         ),
         n_genes_ova=n_genes_adata2_ova,
         n_genes_ava=n_genes_adata2_ava,
+        n_genes_max=n_genes_adata2_max,
         overlap_threshold=overlap_threshold_ava,
         overlap_n_genes=overlap_n_genes_ava,
     )
@@ -157,3 +154,94 @@ def de_gene_overlap_label_distance(
     )
 
     return 1.0 - jaccard
+
+
+def de_gene_rank_difference_distance(
+    adata1: anndata.AnnData,
+    adata2: anndata.AnnData,
+    n_genes_ova: int = 10,
+    n_genes_ava: int = 3,
+    overlap_threshold: float = 0.3,
+    overlap_n_genes: int = 10,
+    adj_p_val_threshold: float = 0.05,
+    auroc_threshold: float = 0.6,
+    gene_filtering: bool = True,
+    return_selected_genes: bool = False,
+) -> pd.DataFrame | tuple[pd.DataFrame, dict[str, dict[str, dict[str, pd.DataFrame]]]]:
+    """
+    Compute cell-type label distance matrix based on the rank difference (sorted by logFC) of the top differentially
+    expressed genes from the query dataset.
+    """
+    _check_de_results(adata1, "cell_type_author")
+    _check_de_results(adata2, "cell_type_author")
+
+    de_genes_adata1 = select_and_combine_de_results(
+        sort_and_filter_de_genes_ova(
+            adata1.uns["de_res_ova"],
+            aucroc_threshold=auroc_threshold,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        sort_and_filter_de_genes_ava(
+            adata1.uns["de_res_ava"],
+            aucroc_threshold=auroc_threshold,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        n_genes_ova=n_genes_ova,
+        n_genes_ava=n_genes_ava,
+        overlap_threshold=overlap_threshold,
+        overlap_n_genes=overlap_n_genes,
+    )
+    de_genes_adata2 = select_and_combine_de_results(
+        sort_and_filter_de_genes_ova(
+            adata2.uns["de_res_ova"],
+            aucroc_threshold=auroc_threshold,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        sort_and_filter_de_genes_ava(
+            adata2.uns["de_res_ava"],
+            aucroc_threshold=auroc_threshold,
+            adj_pval_threshold=adj_p_val_threshold,
+            gene_filtering=gene_filtering,
+        ),
+        n_genes_ova=None,
+        n_genes_ava=None,
+        overlap_threshold=overlap_threshold,
+        overlap_n_genes=overlap_n_genes,
+    )
+    rank_distance = _calc_rank_distance(de_genes_adata1, de_genes_adata2)
+
+    if not return_selected_genes:
+        return rank_distance
+    else:
+        used_genes = {}
+        for ct_query in de_genes_adata1.keys():
+            used_genes[ct_query] = {}
+            for ct_ref in de_genes_adata2.keys():
+                genes_query = (
+                    de_genes_adata1[ct_query]
+                    .reset_index(names="gene")
+                    .reset_index(names="rank")
+                )
+                genes_ref = (
+                    de_genes_adata2[ct_ref]
+                    .reset_index(names="gene")
+                    .query(f"`gene` in {de_genes_adata1[ct_query].index.tolist()}")
+                    .reset_index(names="rank")
+                    .set_index("gene")
+                )
+                used_genes[ct_query][ct_ref] = (
+                    pd.merge(
+                        genes_query,
+                        genes_ref,
+                        on="gene",
+                        suffixes=("_query", "_ref"),
+                        how="outer",
+                    )
+                    .sort_values("rank_query")
+                    .set_index("gene")
+                )
+
+        return rank_distance, used_genes

@@ -23,6 +23,7 @@ def _plot_heatmap(
         height = 20 * data.shape[0] + 275
     fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap, **kwargs)
     fig.update_layout(autosize=False, width=width, height=height)
+    fig.update_layout(coloraxis_showscale=False)
     return fig
 
 
@@ -33,8 +34,14 @@ def plot_cluster_mapping(
     zmin: Optional[float] = None,
     zmax: Optional[float] = None,
     colormap: str = "Greens",
+    sort_by_score: bool = True,
     show: bool = True,
 ):
+    if sort_by_score:
+        data = data.loc[
+            data.max(axis=1).sort_values(ascending=False).index.tolist(),
+            data.max().sort_values(ascending=False).index.tolist(),
+        ]
     fig = _plot_heatmap(data, colormap, width, height, zmin=zmin, zmax=zmax)
     if show:
         fig.show()

@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict, Tuple, Optional, List, Literal, Union, Iterable
+from typing import Dict, Tuple, Optional, List, Literal
 
 import anndata
 import jax
@@ -18,7 +18,7 @@ from scipy.spatial.distance import jensenshannon
 from scipy.stats import rankdata
 from sklearn.utils.class_weight import compute_class_weight
 
-from datasim.label_distance import de_gene_overlap_label_distance
+from datasim.label_distance import de_gene_rank_difference_distance
 from datasim.preprocessing import preprocess_adatas
 
 
@@ -141,6 +141,8 @@ class DatasetMapping:
         self.adata2 = adata2
 
         self.geom: Optional[pointcloud.PointCloud] = None
+        self._used_genes: Optional[dict[str, dict[str, pd.DataFrame]]] = None
+        self._label_distance: Optional[pd.DataFrame] = None
         self.ot_prob: Optional[linear_problem.LinearProblem] = None
         self.ot_solution: Optional[sinkhorn.SinkhornOutput] = None
 
@@ -170,6 +172,16 @@ class DatasetMapping:
                         assert ct2 in adata.uns["de_res_ava"][ct]
                         for col in ["logFC", "adj.P.Val"]:
                             assert col in adata.uns["de_res_ava"][ct][ct2].columns
+
+    @property
+    def DEGs_label_distance_matrix(self):
+        self._assert_geom_initialized()
+        return self._used_genes
+
+    @property
+    def label_distance_matrix(self):
+        self._assert_geom_initialized()
+        return self._label_distance
 
     def _assert_geom_initialized(self):
         if self.geom is None:
@@ -240,55 +252,34 @@ class DatasetMapping:
 
     def _compute_label_distances(
         self,
-        n_genes_adata1_ova: int = 10,
-        n_genes_adata2_ova: Union[int, Iterable[int]] = 20,
-        n_genes_adata1_ava: int = 3,
-        n_genes_adata2_ava: int = 3,
-        overlap_threshold_ava: float = 0.1,
+        n_genes_ova: int = 10,
+        n_genes_ava: int = 3,
+        overlap_threshold_ava: float = 0.3,
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
         auroc_threshold: float = 0.6,
-        gene_filtering: Literal[
-            "standard",
-            "strict-pegasus-immune",
-            "strict-villani-immune",
-            "strict-villani-bonemarrow",
-            None,
-        ] = "standard",
+        gene_filtering: bool = True,
     ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
         adata1 = self.adata1
         adata2 = self.adata2
-        if type(n_genes_adata2_ova) is int:
-            n_genes_adata2_ova = [n_genes_adata2_ova]
 
-        label_distances = []
-        for i in n_genes_adata2_ova:
-            label_distances.append(
-                de_gene_overlap_label_distance(
-                    adata1,
-                    adata2,
-                    cell_type_column="cell_type_author",
-                    n_genes_adata1_ova=n_genes_adata1_ova,
-                    n_genes_adata2_ova=i,
-                    n_genes_adata1_ava=n_genes_adata1_ava,
-                    n_genes_adata2_ava=n_genes_adata2_ava,
-                    overlap_threshold_ava=overlap_threshold_ava,
-                    overlap_n_genes_ava=overlap_n_genes_ava,
-                    adj_p_val_threshold=adj_p_val_threshold,
-                    auroc_threshold=auroc_threshold,
-                    gene_filtering=gene_filtering,
-                )
-            )
-        label_distance = pd.DataFrame(
-            np.stack([dist.to_numpy() for dist in label_distances]).mean(axis=0),
-            columns=label_distances[0].columns,
-            index=label_distances[0].index,
+        self._label_distance, self._used_genes = de_gene_rank_difference_distance(
+            adata1,
+            adata2,
+            n_genes_ova=n_genes_ova,
+            n_genes_ava=n_genes_ava,
+            overlap_threshold=overlap_threshold_ava,
+            overlap_n_genes=overlap_n_genes_ava,
+            adj_p_val_threshold=adj_p_val_threshold,
+            auroc_threshold=auroc_threshold,
+            gene_filtering=gene_filtering,
+            return_selected_genes=True,
         )
-        label_distance_ordered = np.zeros(label_distance.shape)
+        label_distance_ordered = np.zeros(self._label_distance.shape)
         for i, label1 in enumerate(adata1.obs["cell_type_author"].cat.categories):
             for j, label2 in enumerate(adata2.obs["cell_type_author"].cat.categories):
-                label_distance_ordered[i, j] = label_distance.loc[label1, label2]
+                label_distance_ordered[i, j] = self._label_distance.loc[label1, label2]
 
         return jnp.array(label_distance_ordered.astype("f4"))
 
@@ -315,23 +306,15 @@ class DatasetMapping:
 
     def init_geom(
         self,
-        lambda_feature: float = 1.0,
-        lambda_label: float = 1.0,
-        n_genes_adata1_ova: int = 10,
-        n_genes_adata2_ova: Union[int, Iterable[int]] = 20,
-        n_genes_adata1_ava: int = 3,
-        n_genes_adata2_ava: int = 3,
-        overlap_threshold_ava: float = 0.1,
+        lambda_feature: float = 0.5,
+        lambda_label: float = 1.5,
+        n_genes_ova: int = 10,
+        n_genes_ava: int = 3,
+        overlap_threshold_ava: float = 0.3,
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
         auroc_threshold: float = 0.6,
-        gene_filtering: Literal[
-            "standard",
-            "strict-pegasus-immune",
-            "strict-villani-immune",
-            "strict-villani-bonemarrow",
-            None,
-        ] = "standard",
+        gene_filtering: bool = True,
         embedding_layer: Optional[str] = None,
         **kwargs,
     ):
@@ -345,20 +328,13 @@ class DatasetMapping:
             Weight for the distance in gene/feature space for the cell to cell transport cost.
         lambda_label: float = 1.0
             Weight for the distance in label space for the cell to cell transport cost.
-        n_genes_adata1_ova: int = 10
-            Number of top n differentially expressed (DE) genes in `adata1` used to calculate the overlap of DE genes
-            for the label distance. This setting applies to the one-vs-all (OVA) DE test results.
-        n_genes_adata2_ova: Union[int, Iterable[int]] = 20
-            Number of top n differentially expressed (DE) genes in `adata2` used to calculate the overlap of DE genes
-            for the label distance. This setting applies to the one-vs-all (OVA) DE test results.
-            If an `Iterable[int]` is provided, the mean of the individual label distances is used.
-        n_genes_adata1_ava: int = 3
-            Number of top n differentially expressed (DE) genes in `adata1` used to calculate the overlap of DE genes
-            for the label distance. This setting applies to the all-vs-all (AVA) DE test results.
-        n_genes_adata2_ava: int = 3
-            Number of top n differentially expressed (DE) genes in `adata2` used to calculate the overlap of DE genes
-            for the label distance. This setting applies to the all-vs-all (AVA) DE test results.
-        overlap_threshold_ava: float = 0.1
+        n_genes_ova: int = 10
+            Number of top n differentially expressed (DE) genes in `adata1` used to calculate the rank distance between
+            DE genes for the label distance. This setting applies to the one-vs-all (OVA) DE test results.
+        n_genes_ava: int = 3
+            Number of top n differentially expressed (DE) genes in `adata1` used to calculate the rank distance between
+            DE genes for the label distance. This setting applies to the all-vs-all (AVA) DE test results.
+        overlap_threshold_ava: float = 0.3
             Minimum overlap of the top `overlap_n_genes_ava` DE genes to add the all-vs-all (AVA) DE test results for
             the corresponding cell type label combination.
         overlap_n_genes_ava: int = 10
@@ -368,8 +344,9 @@ class DatasetMapping:
             Minimum adjusted p-value to consider a gene as differentially expressed.
         auroc_threshold: float = 0.6
             Minimum AUROC score to consider a gene as differentially expressed.
-        gene_filtering: Literal = "standard"
-            Type of gene filtering to apply to the DE results.
+        gene_filtering: bool = True
+            Whether to filter DE gene results. If true mitochondrial, ribosomal, IncRNA, TCR and BCR genes are removed
+            from the DE results.
         embedding_layer: Optional[str] = None
             Name of the embedding layer in `adata1.obsm` and `adata1.obsm` used to calculate the distance between
             two cells.
@@ -380,10 +357,8 @@ class DatasetMapping:
         """
         x, y = self._preprocess_data(embedding_layer=embedding_layer)
         label_distance = self._compute_label_distances(
-            n_genes_adata1_ova=n_genes_adata1_ova,
-            n_genes_adata2_ova=n_genes_adata2_ova,
-            n_genes_adata1_ava=n_genes_adata1_ava,
-            n_genes_adata2_ava=n_genes_adata2_ava,
+            n_genes_ova=n_genes_ova,
+            n_genes_ava=n_genes_ava,
             overlap_threshold_ava=overlap_threshold_ava,
             overlap_n_genes_ava=overlap_n_genes_ava,
             adj_p_val_threshold=adj_p_val_threshold,
@@ -473,7 +448,7 @@ class DatasetMapping:
         aggregation_method: Optional[
             Literal["mean", "jensen_shannon", "transported_mass"]
         ] = None,
-    ) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    ) -> pd.DataFrame | Dict[str, pd.DataFrame]:
         """
         Compute the mapping between cell-type clusters based on the aggregated transport matrix.
         Aggregation is done by cluster/cell-type.
@@ -576,7 +551,7 @@ class DatasetMapping:
 
     def refine_clusters_based_on_reference(
         self, top_n_labels: Dict[str, List[str]]
-    ) -> pd.Series:
+    ) -> (pd.Series, Dict[str, Dict[str, np.ndarray]]):
         self._assert_fully_initialized()
 
         category_mapping_x = _get_category_mapping(self.adata1.obs["cell_type_author"])
@@ -585,6 +560,7 @@ class DatasetMapping:
         sub_clusters = pd.Series(
             ["None"] * len(self.adata1), index=self.adata1.obs.index
         )
+        marginals = {ct: {} for ct, v in top_n_labels.items() if len(v) > 1}
 
         for label_x, suggestions in tqdm.tqdm(top_n_labels.items()):
             mask_x = x_label_np == category_mapping_x[label_x]
@@ -610,17 +586,19 @@ class DatasetMapping:
                         ot_sol.apply(y_label_np[mask_y] == category_mapping_y[s])
                         / prob.b
                     ).astype("f8")
+                    marginals[label_x][s] = marginals_contrib[s]
                 predictions = _predict_from_marginals(
                     self.adata2.obs.query(f"`cell_type_author` in {suggestions}")[
                         "cell_type_author"
                     ],
                     marginals_contrib,
                 )
-                sub_clusters[mask_x] = [
-                    f"{label_x} --> " + pred for pred in predictions
-                ]
+                sub_clusters[mask_x] = [f"{label_x} -> " + pred for pred in predictions]
 
-        return sub_clusters.replace({"None": None}).astype("category")
+        return (
+            sub_clusters.replace({"None": None}).astype("category"),
+            marginals,
+        )
 
     @staticmethod
     def select_most_similar_clusters(
