@@ -1,0 +1,57 @@
+HGNC ID	Approved symbol	Approved name	Status	Previous symbols	Alias symbols	Chromosome	Accession numbers	RefSeq IDs	Locus group	Locus type	Gene group ID	Gene group name
+HGNC:7409	MT-7SDNA	mitochondrially encoded 7S DNA	Approved	MT7SDNA		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7414	MT-ATP6	mitochondrially encoded ATP synthase membrane subunit 6	Approved	MTATP6, RP	ATP6, ATPase-6, Su6m	mitochondria		YP_003024031	protein-coding gene	gene with protein product	644|1974	Mitochondrial complex V: ATP synthase subunits|Mitochondrially encoded protein coding genes
+HGNC:7415	MT-ATP8	mitochondrially encoded ATP synthase membrane subunit 8	Approved	MTATP8	ATP8, A6L, URFA6L	mitochondria		YP_003024030	protein-coding gene	gene with protein product	1974|644	Mitochondrially encoded protein coding genes|Mitochondrial complex V: ATP synthase subunits
+HGNC:7416	MT-ATT	mitochondrially encoded membrane attachment site	Approved	MTATT		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7419	MT-CO1	mitochondrially encoded cytochrome c oxidase I	Approved	MTCO1	COX1, COI	mitochondria		YP_003024028	protein-coding gene	gene with protein product	1974|643	Mitochondrially encoded protein coding genes|Mitochondrial complex IV: cytochrome c oxidase subunits
+HGNC:7421	MT-CO2	mitochondrially encoded cytochrome c oxidase II	Approved	MTCO2	COX2, CO2	mitochondria		YP_003024029	protein-coding gene	gene with protein product	643|1974	Mitochondrial complex IV: cytochrome c oxidase subunits|Mitochondrially encoded protein coding genes
+HGNC:7422	MT-CO3	mitochondrially encoded cytochrome c oxidase III	Approved	MTCO3	COX3, COIII, CO3	mitochondria		YP_003024032	protein-coding gene	gene with protein product	1974|643	Mitochondrially encoded protein coding genes|Mitochondrial complex IV: cytochrome c oxidase subunits
+HGNC:7424	MT-CSB1	mitochondrially encoded conserved sequence block I	Approved	MTCSB1	CSB-I	mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7425	MT-CSB2	mitochondrially encoded conserved sequence block II	Approved	MTCSB2	CSB-II	mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7426	MT-CSB3	mitochondrially encoded conserved sequence block III	Approved	MTCSB3	CSB-III	mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7427	MT-CYB	mitochondrially encoded cytochrome b	Approved	MTCYB	COB, CYTB, UQCR3	mitochondria		YP_003024038	protein-coding gene	gene with protein product	1974|642	Mitochondrially encoded protein coding genes|Mitochondrial complex III: ubiquinol-cytochrome c reductase complex subunits
+HGNC:7438	MT-HPR	mitochondrially encoded replication primer	Approved	MTHPR	HPR	mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7439	MT-HSP1	mitochondrially encoded major H-strand promoter	Approved	MTHSP1		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7440	MT-HSP2	mitochondrially encoded minor H-strand promoter	Approved	MTHSP2		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:50279	MT-LIPCAR	mitochondrially encoded long non-coding cardiac associated RNA	Approved		uc022bqs.1, LIPCAR	mitochondria	JA760602		non-coding RNA	RNA, long non-coding	1992|1976	Long non-coding RNAs with non-systematic symbols|Mitochondrially encoded long non-coding RNAs
+HGNC:7447	MT-LSP	mitochondrially encoded L-strand promoter	Approved	MTLSP		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7455	MT-ND1	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 1	Approved	MTND1	ND1, NAD1	mitochondria		YP_003024026	protein-coding gene	gene with protein product	1974|1149	Mitochondrially encoded protein coding genes|NADH:ubiquinone oxidoreductase core subunits
+HGNC:7456	MT-ND2	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 2	Approved	MTND2	ND2, NAD2	mitochondria		YP_003024027	protein-coding gene	gene with protein product	1149|1974	NADH:ubiquinone oxidoreductase core subunits|Mitochondrially encoded protein coding genes
+HGNC:7458	MT-ND3	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 3	Approved	MTND3	ND3, NAD3	mitochondria		YP_003024033	protein-coding gene	gene with protein product	1974|1149	Mitochondrially encoded protein coding genes|NADH:ubiquinone oxidoreductase core subunits
+HGNC:7459	MT-ND4	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 4	Approved	MTND4, LHON	ND4, NAD4	mitochondria		YP_003024035	protein-coding gene	gene with protein product	1149|1974	NADH:ubiquinone oxidoreductase core subunits|Mitochondrially encoded protein coding genes
+HGNC:7460	MT-ND4L	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 4L	Approved	MTND4L	ND4L, NAD4L	mitochondria		YP_003024034	protein-coding gene	gene with protein product	1974|1149	Mitochondrially encoded protein coding genes|NADH:ubiquinone oxidoreductase core subunits
+HGNC:7461	MT-ND5	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 5	Approved	MTND5	ND5, NAD5	mitochondria		YP_003024036	protein-coding gene	gene with protein product	1149|1974	NADH:ubiquinone oxidoreductase core subunits|Mitochondrially encoded protein coding genes
+HGNC:7462	MT-ND6	mitochondrially encoded NADH:ubiquinone oxidoreductase core subunit 6	Approved	MTND6	NAD6, ND6	mitochondria		YP_003024037	protein-coding gene	gene with protein product	1974|1149	Mitochondrially encoded protein coding genes|NADH:ubiquinone oxidoreductase core subunits
+HGNC:7465	MT-OHR	mitochondrially encoded heavy strand origin of replication	Approved	MTOHR		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7466	MT-OLR	mitochondrially encoded light strand origin of replication	Approved	MTOLR	OriL	mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7470	MT-RNR1	mitochondrially encoded 12S rRNA	Approved	MTRNR1	12S, MOTS-c	mitochondria			non-coding RNA	RNA, ribosomal	1378	Mitochondrially encoded ribosomal RNAs
+HGNC:7471	MT-RNR2	mitochondrially encoded 16S rRNA	Approved	MTRNR2	HN, 16S	mitochondria		NC_012920	non-coding RNA	RNA, ribosomal	1378|542	Mitochondrially encoded ribosomal RNAs|Receptor ligands
+HGNC:7472	MT-RNR3	mitochondrially encoded 5S-like sequence	Approved	MTRNR3		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7475	MT-TA	mitochondrially encoded tRNA-Ala (GCN)	Approved	MTTA	trnA	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7476	MT-TAS	mitochondrially encoded termination associated sequence	Approved	MTTAS		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7477	MT-TC	mitochondrially encoded tRNA-Cys (UGU/C)	Approved	MTTC	trnC	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7478	MT-TD	mitochondrially encoded tRNA-Asp (GAU/C)	Approved	MTTD	trnD	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7479	MT-TE	mitochondrially encoded tRNA-Glu (GAA/G)	Approved	MTTE	trnE	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7480	MT-TER	mitochondrially encoded transcription terminator	Approved	MTTER		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7481	MT-TF	mitochondrially encoded tRNA-Phe (UUU/C)	Approved	MTTF	trnF	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7482	MT-TFH	mitochondrially encoded transcription factor binding site H	Approved	MTTFH		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7483	MT-TFL	mitochondrially encoded transcription factor binding site L	Approved	MTTFL		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7484	MT-TFX	mitochondrially encoded transcription factor binding site X	Approved	MTTFX		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7485	MT-TFY	mitochondrially encoded transcription factor binding site Y	Approved	MTTFY		mitochondria			other	region	1973	Mitochondrially encoded regions
+HGNC:7486	MT-TG	mitochondrially encoded tRNA-Gly (GGN)	Approved	MTTG	trnG	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7487	MT-TH	mitochondrially encoded tRNA-His (CAU/C)	Approved	MTTH	trnH	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7488	MT-TI	mitochondrially encoded tRNA-Ile (AUU/C)	Approved	MTTI	trnI	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7489	MT-TK	mitochondrially encoded tRNA-Lys (AAA/G)	Approved	MERRF, MTTK	trnK	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7490	MT-TL1	mitochondrially encoded tRNA-Leu (UUA/G) 1	Approved	MTTL1	TRNL1	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7491	MT-TL2	mitochondrially encoded tRNA-Leu (CUN) 2	Approved	MTTL2	TRNL2	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7492	MT-TM	mitochondrially encoded tRNA-Met (AUA/G)	Approved	MTTM	trnM	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7493	MT-TN	mitochondrially encoded tRNA-Asn (AAU/C)	Approved	MTTN	trnN	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7494	MT-TP	mitochondrially encoded tRNA-Pro (CCN)	Approved	MTTP	trnP	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7495	MT-TQ	mitochondrially encoded tRNA-Gln (CAA/G)	Approved	MTTQ	trnQ	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7496	MT-TR	mitochondrially encoded tRNA-Arg (CGN)	Approved	MTTR	trnR	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7497	MT-TS1	mitochondrially encoded tRNA-Ser (UCN) 1	Approved	MTTS1	TRNS1	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7498	MT-TS2	mitochondrially encoded tRNA-Ser (AGU/C) 2	Approved	MTTS2	TRNS2, RP8	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7499	MT-TT	mitochondrially encoded tRNA-Thr (ACN)	Approved	MTTT, LIMM	trnT	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7500	MT-TV	mitochondrially encoded tRNA-Val (GUN)	Approved	MTTV	trnV	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7501	MT-TW	mitochondrially encoded tRNA-Trp (UGA/G)	Approved	MTTW	trnW	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
+HGNC:7502	MT-TY	mitochondrially encoded tRNA-Tyr (UAU/C)	Approved	MTTY	trnY	mitochondria			non-coding RNA	RNA, transfer	843	Mitochondrially encoded transfer RNAs
