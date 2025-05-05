@@ -1,0 +1,56 @@
+AuthorCellType,cell_type
+Small Pre-B,Pre-B
+Immature B,B
+Pro-B VDJ,Pro-B
+Large Pre-B,Pre-B
+MLP,early lymphoid
+MPP-MkEry,HSC MPP
+Mature B,B
+EarlyProB,early lymphoid
+Pre-ProB,Pro-B
+MPP-MyLy,HSC MPP
+Basophilic Erythroblast,erythroid
+Pro-B Cycling,Pro-B
+Pre-pDC,Pre-pDC
+Cycling Progenitor,GMP
+Megakaryocyte Precursor,megakaryocyte
+CD4 Central Memory,T
+NK Proliferating,NK
+T Proliferating,T
+Plasma Cell,plasma cell
+Pre-pDC Cycling,pDC
+EoBasoMast Precursor,EoBasoMast Pre.
+pDC,pDC
+MLP-II,early lymphoid
+GMP-Mono,GMP
+Early GMP,GMP
+Pre-cDC,Pre-cDC
+LMPP,LMPP
+HSC,HSC
+MEP,MEP
+BFU-E,MEP
+GMP-Cycle,GMP
+GMP-Neut,GMP
+Early ProMono,ProMono
+CD4 Naive,T
+CFU-E,erythroid
+Pro-Erythroblast,erythroid
+NK,NK
+NK CD56high,NK
+CD8 Effector Memory 2,T
+CD8 Tissue Resident Memory,T
+CD8 Effector Memory 1,T
+CD4 Effector Memory,T
+CD8 Central Memory,T
+CD4 Regulatory,T
+CD8 Naive,T
+Megakaryocyte,megakaryocyte
+cDC2,cDC
+cDC1,cDC
+CD14 Mono,Mono
+ASDC,cDC
+CD16 Mono,Mono
+Polychromatic Erythroblast,erythroid
+Orthochromatic Erythroblast,erythroid
+Stromal,stromal
+Late ProMono,ProMono
