@@ -4,6 +4,7 @@
 .ipynb_checkpoints/
 .DS_Store
 scripts/slurm_out
+scripts/plots
 
 # C extensions
 *.so
