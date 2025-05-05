@@ -6,14 +6,14 @@ from typing import Dict, List
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
-from dash import Dash, html, dcc, Input, Output, callback, dash_table
+from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx
 
 from datasim.plotting import plot_cluster_mapping, plot_cluster_distance
 
 DATA_DIR = "/Users/felix.fischer/similarityOT"
 
 
-models = sorted(os.listdir(DATA_DIR))
+models = [elem for elem in sorted(os.listdir(DATA_DIR)) if elem != ".DS_Store"]
 datasets = sorted(list(set(["+".join(version.split("+")[:2]) for version in models])))
 
 
@@ -46,24 +46,27 @@ app.layout = [
                             dbc.Col(["Tau", dcc.Dropdown(id="tau")]),
                             dbc.Col(
                                 [
-                                    "# genes DE overlap (query)",
-                                    dcc.Dropdown(id="N genes DE overlap (query)"),
+                                    "# genes OVA",
+                                    dcc.Dropdown(id="n_genes_ova"),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    "# genes DE overlap (ref)",
-                                    dcc.Dropdown(id="N genes DE overlap (ref)"),
+                                    "# genes AVA",
+                                    dcc.Dropdown(id="n_genes_ava"),
                                 ]
                             ),
                             dbc.Col(
                                 [
-                                    "Embedding",
-                                    dcc.Dropdown(id="embedding"),
+                                    "Overlap threshold AVA",
+                                    dcc.Dropdown(id="overlap_threshold_ava"),
                                 ],
                             ),
                             dbc.Col(
-                                ["# top genes", dcc.Dropdown(id="n_top_genes")],
+                                [
+                                    "# genes overlap AVA",
+                                    dcc.Dropdown(id="overlap_n_genes_ava"),
+                                ],
                             ),
                         ],
                     )
@@ -75,42 +78,44 @@ app.layout = [
         [
             dbc.CardHeader("Mapping + Distance Visualization"),
             dbc.CardBody(
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                "Aggregation method",
-                                dcc.Dropdown(
-                                    [
-                                        "mean",
-                                        "jensen_shannon",
-                                        "transported_mass",
-                                    ],
-                                    value="mean",
-                                    id="aggregation",
-                                ),
-                            ]
-                        ),
-                        dbc.Col(
-                            [
-                                "Transpose matrices",
-                                dcc.Dropdown(["yes", "no"], value="no", id="transpose"),
-                            ]
-                        ),
-                        dbc.Col(
-                            [
-                                "Sort rows",
-                                dcc.Dropdown(["yes", "no"], value="no", id="sort-rows"),
-                            ]
-                        ),
-                        dbc.Col(
-                            [
-                                "Sort columns",
-                                dcc.Dropdown(["yes", "no"], value="no", id="sort-cols"),
-                            ]
-                        ),
-                    ]
-                ),
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    "Aggregation method",
+                                    dcc.Dropdown(
+                                        [
+                                            "mean",
+                                            "jensen_shannon",
+                                            "transported_mass",
+                                        ],
+                                        value="mean",
+                                        id="aggregation",
+                                    ),
+                                ]
+                            ),
+                            dbc.Col(
+                                [
+                                    "Transpose matrices",
+                                    dcc.Dropdown(
+                                        ["yes", "no"], value="no", id="transpose"
+                                    ),
+                                ]
+                            ),
+                            dbc.Col(
+                                [
+                                    "Sorting",
+                                    dcc.Dropdown(
+                                        ["no", "alphabetical", "score"],
+                                        value="score",
+                                        id="sorting",
+                                    ),
+                                ]
+                            ),
+                        ]
+                    ),
+                ]
             ),
             dbc.CardBody(
                 dbc.Row(
@@ -119,6 +124,37 @@ app.layout = [
                         dbc.Col(html.Div(id="distance")),
                     ]
                 ),
+            ),
+            dbc.CardBody(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dbc.Button(
+                                    "Save Plots as SVG",
+                                    color="primary",
+                                    id="save_button",
+                                    n_clicks=0,
+                                )
+                            ),
+                            dbc.Col(
+                                dbc.Button(
+                                    "Save Plots as HTML",
+                                    color="primary",
+                                    id="save_button_html",
+                                    n_clicks=0,
+                                )
+                            ),
+                            dbc.Col(
+                                dbc.Input(
+                                    id="save_filename",
+                                    type="text",
+                                    placeholder="Enter output filename name here ...",
+                                )
+                            ),
+                        ]
+                    ),
+                ]
             ),
         ]
     ),
@@ -214,20 +250,20 @@ def select_options(value, param: str):
 def read_files(
     aggregation,
     dataset,
-    n_top_genes,
-    n_genes_de_overlap_query,
-    n_genes_de_overlap_ref,
+    n_genes_ova,
+    n_genes_ava,
     tau,
     epsilon,
-    embedding,
+    overlap_threshold_ava,
+    overlap_n_genes_ava,
 ):
     version = dataset
-    version += f"+n_top_genes={n_top_genes}"
-    version += f"+n_genes_query_ova={n_genes_de_overlap_query}"
-    version += f"+n_genes_ref_ova={n_genes_de_overlap_ref}"
+    version += f"+n_genes_ova={n_genes_ova}"
+    version += f"+n_genes_ava={n_genes_ava}"
     version += f"+tau={tau}"
     version += f"+epsilon={epsilon}"
-    version += f"+embedding_layer={embedding}"
+    version += f"+overlap_threshold_ava={overlap_threshold_ava}"
+    version += f"+overlap_n_genes_ava={overlap_n_genes_ava}"
 
     mapping = join(DATA_DIR, version, f"mapping_{aggregation}.parquet")
     distance = join(DATA_DIR, version, "distance.parquet")
@@ -267,24 +303,24 @@ def update_options(value):
     return select_options(value, "tau")
 
 
-@callback(Output("N genes DE overlap (query)", "options"), Input("dataset", "value"))
+@callback(Output("n_genes_ova", "options"), Input("dataset", "value"))
 def update_options(value):
-    return select_options(value, "n_genes_query_ova")
+    return select_options(value, "n_genes_ova")
 
 
-@callback(Output("N genes DE overlap (ref)", "options"), Input("dataset", "value"))
+@callback(Output("n_genes_ava", "options"), Input("dataset", "value"))
 def update_options(value):
-    return select_options(value, "n_genes_ref_ova")
+    return select_options(value, "n_genes_ava")
 
 
-@callback(Output("embedding", "options"), Input("dataset", "value"))
+@callback(Output("overlap_threshold_ava", "options"), Input("dataset", "value"))
 def update_options(value):
-    return select_options(value, "embedding_layer")
+    return select_options(value, "overlap_threshold_ava")
 
 
-@callback(Output("n_top_genes", "options"), Input("dataset", "value"))
+@callback(Output("overlap_n_genes_ava", "options"), Input("dataset", "value"))
 def update_options(value):
-    return select_options(value, "n_top_genes")
+    return select_options(value, "overlap_n_genes_ava")
 
 
 @callback(
@@ -310,51 +346,77 @@ def show_versions(value):
     Input("dataset", "value"),
     Input("epsilon", "value"),
     Input("tau", "value"),
-    Input("N genes DE overlap (query)", "value"),
-    Input("N genes DE overlap (ref)", "value"),
-    Input("embedding", "value"),
-    Input("n_top_genes", "value"),
+    Input("n_genes_ova", "value"),
+    Input("n_genes_ava", "value"),
+    Input("overlap_threshold_ava", "value"),
+    Input("overlap_n_genes_ava", "value"),
     Input("transpose", "value"),
-    Input("sort-rows", "value"),
-    Input("sort-cols", "value"),
+    Input("sorting", "value"),
+    Input("save_button", "n_clicks"),
+    Input("save_button_html", "n_clicks"),
+    State("save_filename", "value"),
 )
 def heatmap_plots(
     aggregation,
     dataset,
     epsilon,
     tau,
-    n_genes_de_overlap_query,
-    n_genes_de_overlap_ref,
-    embedding,
-    n_top_genes,
+    n_genes_ova,
+    n_genes_ava,
+    overlap_threshold_ava,
+    overlap_n_genes_ava,
     transpose,
-    sort_rows,
-    sort_cols,
+    sorting,
+    n_clicks,
+    n_clicks_html,
+    save_filename,
 ):
     mapping, distance = read_files(
         aggregation,
         dataset,
-        n_top_genes,
-        n_genes_de_overlap_query,
-        n_genes_de_overlap_ref,
+        n_genes_ova,
+        n_genes_ava,
         tau,
         epsilon,
-        embedding,
+        overlap_threshold_ava,
+        overlap_n_genes_ava,
     )
     if mapping is not None and distance is not None:
-        if sort_rows == "yes":
-            mapping = mapping.sort_index()
-            distance = distance.sort_index()
-        if sort_cols == "yes":
-            mapping = mapping.sort_index(axis=1)
-            distance = distance.sort_index(axis=1)
+        match sorting:
+            case "alphabetical":
+                mapping = mapping.sort_index().sort_index(axis=1)
+                distance = distance.sort_index().sort_index(axis=1)
+            case "score":
+                mapping = mapping.loc[
+                    mapping.max(axis=1).sort_values(ascending=False).index.tolist(),
+                    mapping.max().sort_values(ascending=False).index.tolist(),
+                ]
+                distance = distance.loc[
+                    mapping.max(axis=1).sort_values(ascending=False).index.tolist(),
+                    mapping.max().sort_values(ascending=False).index.tolist(),
+                ]
+
         if transpose == "yes":
             mapping = mapping.T
             distance = distance.T
-        mapping_plot = plot_cluster_mapping(mapping, zmin=0.0, zmax=1.0, show=False)
+
+        mapping_plot = plot_cluster_mapping(
+            mapping, zmin=0.0, zmax=1.0, show=False, sort_by_score=False
+        )
         distance_plot = plot_cluster_distance(distance, show=False)
         for fig in [mapping_plot, distance_plot]:
             fig.update_layout(coloraxis_showscale=False)
+
+        if "save_button" == ctx.triggered_id:
+            os.makedirs("plots/svg", exist_ok=True)
+            mapping_plot.write_image(f"plots/svg/{save_filename}_mapping.svg")
+            distance_plot.write_image(f"plots/svg/{save_filename}_distance.svg")
+
+        if "save_button_html" == ctx.triggered_id:
+            os.makedirs("plots/html", exist_ok=True)
+            mapping_plot.write_html(f"plots/html/{save_filename}_mapping.html")
+            distance_plot.write_html(f"plots/html/{save_filename}_distance.html")
+
         return dcc.Graph(figure=mapping_plot), dcc.Graph(figure=distance_plot)
     else:
         error_message = html.Div("No data found for selected version")
@@ -370,10 +432,10 @@ def heatmap_plots(
     Input("dataset", "value"),
     Input("epsilon", "value"),
     Input("tau", "value"),
-    Input("N genes DE overlap (query)", "value"),
-    Input("N genes DE overlap (ref)", "value"),
-    Input("embedding", "value"),
-    Input("n_top_genes", "value"),
+    Input("n_genes_ova", "value"),
+    Input("n_genes_ava", "value"),
+    Input("overlap_threshold_ava", "value"),
+    Input("overlap_n_genes_ava", "value"),
 )
 def suggestions_table(
     aggregation,
@@ -382,20 +444,20 @@ def suggestions_table(
     dataset,
     epsilon,
     tau,
-    n_genes_de_overlap_query,
-    n_genes_de_overlap_ref,
-    embedding,
-    n_top_genes,
+    n_genes_ova,
+    n_genes_ava,
+    overlap_threshold_ava,
+    overlap_n_genes_ava,
 ):
     mapping, distance = read_files(
         aggregation,
         dataset,
-        n_top_genes,
-        n_genes_de_overlap_query,
-        n_genes_de_overlap_ref,
+        n_genes_ova,
+        n_genes_ava,
         tau,
         epsilon,
-        embedding,
+        overlap_threshold_ava,
+        overlap_n_genes_ava,
     )
     table_columns = [
         {"name": "Cluster", "id": "Cluster"},
