@@ -5,7 +5,7 @@ SConnect: Identifying the similar cell types and cell states across heterogeneou
 
 Tutorial
 ========
-See `docs/SConnect_tutorial.ipynb` for a detailed tutorial on how to use SConnect.
+See `docs/SConnect_tutorial.ipynb` for a [detailed tutorial](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial.ipynb) on how to use SConnect.
 
 
 Installation
