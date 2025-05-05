@@ -23,11 +23,9 @@ def parse_args():
     parser.add_argument("--version", type=str)
     parser.add_argument("--ct_col_query", type=str, default=None)
     parser.add_argument("--n_top_genes", type=int, default=750)
-    parser.add_argument("--n_genes_query_ova", type=int, default=10)
-    parser.add_argument("--n_genes_ref_ova", type=parse_de_overlap, default=10)
-    parser.add_argument("--n_genes_query_ava", type=int, default=3)
-    parser.add_argument("--n_genes_ref_ava", type=int, default=3)
-    parser.add_argument("--overlap_threshold_ava", type=float, default=0.1)
+    parser.add_argument("--n_genes_ova", type=int, default=10)
+    parser.add_argument("--n_genes_ava", type=int, default=3)
+    parser.add_argument("--overlap_threshold_ava", type=float, default=0.3)
     parser.add_argument("--overlap_n_genes_ava", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=4096)
     parser.add_argument("--tau", type=float, default=1.0)
@@ -57,15 +55,14 @@ if __name__ == "__main__":
     dataset_map = DatasetMapping(adata_query, adata_ref)
     if not isfile(join(save_dir, f"ot-solution.pkl")) or not args.reuse_model:
         dataset_map.init_geom(
-            n_genes_adata1_ova=args.n_genes_query_ova,
-            n_genes_adata2_ova=args.n_genes_ref_ova,
-            n_genes_adata1_ava=args.n_genes_query_ava,
-            n_genes_adata2_ava=args.n_genes_ref_ava,
+            n_genes_ova=args.n_genes_ova,
+            n_genes_ava=args.n_genes_ava,
             overlap_threshold_ava=args.overlap_threshold_ava,
             overlap_n_genes_ava=args.overlap_n_genes_ava,
             embedding_layer=args.embedding_layer,
             batch_size=args.batch_size,
             epsilon=args.epsilon,
+            # logfc_threshold=0.0,  # uncomment for macrophage example
         )
         dataset_map.init_problem(tau_a=args.tau, tau_b=args.tau)
         dataset_map.solve()

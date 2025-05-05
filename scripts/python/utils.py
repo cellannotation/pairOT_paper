@@ -28,7 +28,7 @@ def load_data_cached(
         "+".join([query_dataset, ref_dataset, f"{n_top_genes}HVGs"]) + ".pickle",
     )
     if isfile(cache_file):
-        print("Using cached files...")
+        print(f"Using cached file: {cache_file}")
         with open(cache_file, "rb") as f:
             adata_query, adata_ref = pickle.load(f)
     else:
