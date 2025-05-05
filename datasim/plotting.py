@@ -18,12 +18,15 @@ def _plot_heatmap(
     **kwargs,
 ):
     if width is None:
-        width = 30 * data.shape[1]
+        width = max(30 * data.shape[1], 500)
     if height is None:
-        height = 20 * data.shape[0] + 275
+        height = max(20 * data.shape[0] + 275, 500)
     fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap, **kwargs)
     fig.update_layout(autosize=False, width=width, height=height)
     fig.update_layout(coloraxis_showscale=False)
+    fig.update_xaxes(tickangle=90)
+    fig.update_yaxes(tickangle=0)
+
     return fig
 
 

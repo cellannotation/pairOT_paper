@@ -165,8 +165,10 @@ def de_gene_rank_difference_distance(
     overlap_n_genes: int = 10,
     adj_p_val_threshold: float = 0.05,
     auroc_threshold: float = 0.6,
+    logfc_threshold: float = 1.0,
     gene_filtering: bool = True,
     return_selected_genes: bool = False,
+    q_norm: float = 0.33,
 ) -> pd.DataFrame | tuple[pd.DataFrame, dict[str, dict[str, dict[str, pd.DataFrame]]]]:
     """
     Compute cell-type label distance matrix based on the rank difference (sorted by logFC) of the top differentially
@@ -180,12 +182,14 @@ def de_gene_rank_difference_distance(
             adata1.uns["de_res_ova"],
             aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
         ),
         sort_and_filter_de_genes_ava(
             adata1.uns["de_res_ava"],
             aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
         ),
         n_genes_ova=n_genes_ova,
@@ -198,12 +202,14 @@ def de_gene_rank_difference_distance(
             adata2.uns["de_res_ova"],
             aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
         ),
         sort_and_filter_de_genes_ava(
             adata2.uns["de_res_ava"],
             aucroc_threshold=auroc_threshold,
             adj_pval_threshold=adj_p_val_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
         ),
         n_genes_ova=None,
@@ -211,7 +217,7 @@ def de_gene_rank_difference_distance(
         overlap_threshold=overlap_threshold,
         overlap_n_genes=overlap_n_genes,
     )
-    rank_distance = _calc_rank_distance(de_genes_adata1, de_genes_adata2)
+    rank_distance = _calc_rank_distance(de_genes_adata1, de_genes_adata2, q_norm=q_norm)
 
     if not return_selected_genes:
         return rank_distance

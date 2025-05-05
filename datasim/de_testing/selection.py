@@ -5,16 +5,15 @@ import pandas as pd
 
 from datasim.utils import _calc_scaled_jaccard
 
+OFFICIAL_GENES = pd.read_csv(join(dirname(__file__), "resources/official-genes.csv"))
+FILTERED_GENES = pd.read_csv(join(dirname(__file__), "resources/filtered-genes.csv"))
+
 
 def _filter_de_genes(de_res: Dict[str, pd.DataFrame]):
     de_res_return = {}
     # subset DE results to relevant genes
-    genes_to_filter = pd.read_csv(
-        join(dirname(__file__), "resources/filtered-genes.csv")
-    )["feature_name"].tolist()
-    official_gene_names = pd.read_csv(
-        join(dirname(__file__), "resources/official-genes.csv")
-    )["feature_name"].tolist()
+    genes_to_filter = FILTERED_GENES["feature_name"].tolist()
+    official_gene_names = OFFICIAL_GENES["feature_name"].tolist()
     for ct, de_df in de_res.items():
         # subset only to genes whose symbol is present on genenames.org
         de_df = de_df[de_df.index.isin(official_gene_names)]

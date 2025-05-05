@@ -258,7 +258,9 @@ class DatasetMapping:
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
         auroc_threshold: float = 0.6,
+        logfc_threshold: float = 1.0,
         gene_filtering: bool = True,
+        q_norm: float = 0.33,
     ):
         """Compute distance between labels/clusters based on the overlap of differentially expressed genes."""
         adata1 = self.adata1
@@ -273,8 +275,10 @@ class DatasetMapping:
             overlap_n_genes=overlap_n_genes_ava,
             adj_p_val_threshold=adj_p_val_threshold,
             auroc_threshold=auroc_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
             return_selected_genes=True,
+            q_norm=q_norm,
         )
         label_distance_ordered = np.zeros(self._label_distance.shape)
         for i, label1 in enumerate(adata1.obs["cell_type_author"].cat.categories):
@@ -314,7 +318,9 @@ class DatasetMapping:
         overlap_n_genes_ava: int = 10,
         adj_p_val_threshold: float = 0.05,
         auroc_threshold: float = 0.6,
+        logfc_threshold: float = 1.0,
         gene_filtering: bool = True,
+        q_norm: float = 0.33,
         embedding_layer: Optional[str] = None,
         **kwargs,
     ):
@@ -344,9 +350,13 @@ class DatasetMapping:
             Minimum adjusted p-value to consider a gene as differentially expressed.
         auroc_threshold: float = 0.6
             Minimum AUROC score to consider a gene as differentially expressed.
+        logfc_threshold: float = 1.0
+            Minimum log fold change to consider a gene as differentially expressed.
         gene_filtering: bool = True
             Whether to filter DE gene results. If true mitochondrial, ribosomal, IncRNA, TCR and BCR genes are removed
             from the DE results.
+        q_norm: float = 0.33
+            Quantile used to normalize label distance matrix.
         embedding_layer: Optional[str] = None
             Name of the embedding layer in `adata1.obsm` and `adata1.obsm` used to calculate the distance between
             two cells.
@@ -363,7 +373,9 @@ class DatasetMapping:
             overlap_n_genes_ava=overlap_n_genes_ava,
             adj_p_val_threshold=adj_p_val_threshold,
             auroc_threshold=auroc_threshold,
+            logfc_threshold=logfc_threshold,
             gene_filtering=gene_filtering,
+            q_norm=q_norm,
         )
         self.geom = pointcloud.PointCloud(
             x,

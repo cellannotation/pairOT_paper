@@ -74,6 +74,7 @@ def _calc_scaled_jaccard(
 def _calc_rank_distance(
     degs_query: Dict[str, pd.DataFrame],
     degs_ref: Dict[str, pd.DataFrame],
+    q_norm: float = 0.33,
 ) -> pd.DataFrame:
     def prepare_deg_res(df):
         return (
@@ -106,9 +107,12 @@ def _calc_rank_distance(
                 except ValueError:
                     rank_ref = 250.0  # set to arbitrary high value if gene not found
                 rank_distances.append(np.abs(np.log1p(rank_query) - np.log1p(rank_ref)))
-            distance.loc[ct_query, ct_ref] = np.mean(rank_distances)
+            if rank_distances:
+                distance.loc[ct_query, ct_ref] = np.mean(rank_distances)
+            else:
+                distance.loc[ct_query, ct_ref] = 250.0
 
-    return (distance / np.quantile(distance, 0.33)).clip(upper=1.0)
+    return (distance / np.quantile(distance, q_norm)).clip(upper=1.0)
 
 
 def get_expressed_genes_intersection(
