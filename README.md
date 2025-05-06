@@ -102,10 +102,15 @@ Please see the following tutorials for detailed examples of how to use SConnect:
 ## Installation
 
 ### Running SConnect via Docker
-To run SConnect, we provide a docker image that contains all the necessary dependencies: https://hub.docker.com/repository/docker/felix0097/sconnect/general
+To run SConnect, we provide a docker image that contains all the necessary dependencies: https://hub.docker.com/r/felix0097/sconnect/tags
+```bash
+docker pull felix0097/sconnect:v1
+```
 
-To run the R differential expression testing code (pre-processing), we provide a separate docker image: https://hub.docker.com/repository/docker/felix0097/pseudobulk/general
-
+To run the R differential expression testing code (pre-processing), we provide a separate docker image: https://hub.docker.com/r/felix0097/pseudobulk/tags
+```bash
+docker pull felix0097/pseudobulk:v1
+```
 
 ### Install SConnect manually
 
