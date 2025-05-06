@@ -310,6 +310,8 @@ class DatasetMapping:
 
     def init_geom(
         self,
+        epsilon: float = 0.05,
+        batch_size: int | None = 1024,
         lambda_feature: float = 0.5,
         lambda_label: float = 1.5,
         n_genes_ova: int = 10,
@@ -330,6 +332,12 @@ class DatasetMapping:
 
         Parameters
         ----------
+        epsilon: float = 0.05
+            Regularization strength of the optimal transport problem.
+        batch_size: int = 1024
+            Batch size used to solve the optimal transport problem in an online fashion.
+            The bigger the batch size, the better the GPU utilization.
+            However, bigger batch sizes lead to a higher GPU memory consumption.
         lambda_feature: float = 1.0
             Weight for the distance in gene/feature space for the cell to cell transport cost.
         lambda_label: float = 1.0
@@ -380,6 +388,8 @@ class DatasetMapping:
         self.geom = pointcloud.PointCloud(
             x,
             y,
+            epsilon=epsilon,
+            batch_size=batch_size,
             cost_fn=CellCellTransportCost(
                 label_distance, lambda_feature=lambda_feature, lambda_label=lambda_label
             ),
@@ -388,6 +398,8 @@ class DatasetMapping:
 
     def init_problem(
         self,
+        tau_a: float = 1.0,
+        tau_b: float = 1.0,
         marginals_distribution: Literal["uniform", "balanced"] = "balanced",
         **kwargs,
     ):
@@ -397,6 +409,10 @@ class DatasetMapping:
 
         Parameters
         ----------
+        tau_a: float = 1.0
+            If < 1, defines how much unbalanced the problem is on the first marginal.
+        tau_b: float = 1.0
+            If < 1, defines how much unbalanced the problem is on the second marginal.
         marginals_distribution: Literal["uniform", "balanced"] = "uniform"
             Whether the marginals should be uniform or balanced by cell-type frequency.
             Use "uniform" for uniform marginals.
@@ -422,13 +438,19 @@ class DatasetMapping:
         if ("a" not in kwargs) and ("b" not in kwargs):
             assert np.all(np.array(a) > 0.0)
             assert np.all(np.array(b) > 0.0)
-            self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, b=b, **kwargs)
+            self.ot_prob = linear_problem.LinearProblem(
+                self.geom, a=a, b=b, tau_a=tau_a, tau_b=tau_b, **kwargs
+            )
         elif "a" in kwargs:
             assert np.all(np.array(b) > 0.0)
-            self.ot_prob = linear_problem.LinearProblem(self.geom, b=b, **kwargs)
+            self.ot_prob = linear_problem.LinearProblem(
+                self.geom, b=b, tau_a=tau_a, tau_b=tau_b, **kwargs
+            )
         elif "b" in kwargs:
             assert np.all(np.array(a) > 0.0)
-            self.ot_prob = linear_problem.LinearProblem(self.geom, a=a, **kwargs)
+            self.ot_prob = linear_problem.LinearProblem(
+                self.geom, a=a, tau_a=tau_a, tau_b=tau_b, **kwargs
+            )
 
     def solve(self, **kwargs):
         """
