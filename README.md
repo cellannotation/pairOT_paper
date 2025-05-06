@@ -18,22 +18,19 @@ used to identify similar cell types and cell states between the two studies and 
 disagreements between cell annotations of the two datasets.
 
 
-* **How does it work?** SConnect aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets (query + reference dataset), 
-suggesting similar clusters or potential matches against the reference dataset for each cell type in the query dataset 
-solely based on the underlying transcriptomic signatures. To achieve this task, we model each dataset as a point cloud, 
-meaning each data point or cell is associated with a gene expression vector (𝘅) and a cluster / cell-type label (y). 
-Notably, the clustering or grouping information of individual cells uniformly annotated, not the associated string 
-labels, is provided by the cell-type label y. At its core, SConnect uses optimal transport to connect the point cloud 
-distribution of the query dataset with the point cloud from the reference dataset; thus, the method considers the 
-global structure of the data, compared to just finding the closest neighbors in the reference dataset.  
-The distance between a cell in the query dataset (described by the multi-dimensional gene expression vector 𝘅1 and 
-cluster label y1) and a cell in the reference dataset (described by the multi-dimensional gene expression vector 𝘅2 and 
-cluster label y2) is split into two parts. The distance measure (also known as the “transport cost”) is the sum between 
-the distance in gene expression space and the distance in label space:
-$$
-distance((𝘅_1, y_1), (𝘅_2, y_2)) = \lambda_{feature} \cdot distance_{gene\,expression} (𝘅_1, 𝘅_2) + \lambda_{label} 
-\cdot distance_{label}(y_1, y_2)
-$$
+* **How does it work?** SConnect aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets 
+(query + reference dataset), suggesting similar clusters or potential matches against the reference dataset for each 
+cell type in the query dataset solely based on the underlying transcriptomic signatures. To achieve this task, we model 
+each dataset as a point cloud, meaning each data point or cell is associated with a gene expression vector (𝘅) and a 
+cluster / cell-type label (y). Notably, the clustering or grouping information of individual cells uniformly annotated, 
+not the associated string labels, is provided by the cell-type label y. At its core, SConnect uses optimal transport to 
+connect the point cloud distribution of the query dataset with the point cloud from the reference dataset; thus, the 
+method considers the global structure of the data, compared to just finding the closest neighbors in the reference dataset.  
+The distance between a cell in the query dataset (described by the multi-dimensional gene expression vector 𝘅₁ and 
+cluster label y₁) and a cell in the reference dataset (described by the multi-dimensional gene expression vector 
+𝘅₂ and cluster label y₂) is split into two parts. The distance measure (also known as the “transport cost”) is the 
+sum between the distance in gene expression space and the distance in label space:
+![distance_equation](docs/distance_equation.png)
 ![SConnect](docs/SConnect.png)
 
 * **What does it produce?**
