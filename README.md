@@ -18,7 +18,8 @@ used to identify similar cell types and cell states between the two studies and 
 disagreements between cell annotations of the two datasets.
 
 
-* **How does it work?** SConnect aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets 
+* **How does it work?** ![SConnect](docs/SConnect.png)
+SConnect aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets 
 (query + reference dataset), suggesting similar clusters or potential matches against the reference dataset for each 
 cell type in the query dataset solely based on the underlying transcriptomic signatures. To achieve this task, we model 
 each dataset as a point cloud, meaning each data point or cell is associated with a gene expression vector (𝘅) and a 
@@ -31,7 +32,6 @@ cluster label y₁) and a cell in the reference dataset (described by the multi-
 𝘅₂ and cluster label y₂) is split into two parts. The distance measure (also known as the “transport cost”) is the 
 sum between the distance in gene expression space and the distance in label space:
 ![distance_equation](docs/distance_equation.png)
-![SConnect](docs/SConnect.png)
 
 * **What does it produce?**
 SConnect produces two key outputs:
