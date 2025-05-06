@@ -68,7 +68,7 @@ adata_query, adata_ref = preprocess_adatas(
     sample_column_adata2="sequencing_sample_column_ref",
 )
 
-# 2. Intialize SConnect model
+# 2. Initialize SConnect model
 from datasim.dataset_ot import DatasetMapping
 
 dataset_map = DatasetMapping(adata_query, adata_ref)
@@ -133,7 +133,10 @@ For more details to install ``jax``, see: https://docs.jax.dev/en/latest/install
     * ``rpy2`` version ``3.5.11`` uses ``R4.3`` which is need for all R dependencies.
     * If you use a different R version, you'll need to update the package versions of the R dependencies accordingly.
     * It's recommended to install ``rpy2`` via conda, as this already installs R on your system.
-3. Install R dependencies
+3. Install other python dependencies:
+   * ``cython>=3.0.11``
+   *  ``joblib>=1.4.2``
+4. Install R dependencies
     * Open a `python` console and run the following commands:
     ```python
     import rpy2.robjects as ro
