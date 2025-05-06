@@ -7730,7 +7730,7 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># All DEGs (differentially expressed genes) are subset to the genes list in OFFICAL_GENES</span>
 <span class="c1"># Genes that are not list there are discarded</span>
-<span class="n">OFFICIAL_GENES</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">OFFICIAL_GENES</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"feature_name"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7761,59 +7761,52 @@ a.anchor-link {
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>feature_name</th>
 <th>origin</th>
+</tr>
+<tr>
+<th>feature_name</th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<th>31409</th>
-<td>RNU6-992P</td>
+<th>RNU6-992P</th>
 <td>Approved symbol</td>
 </tr>
 <tr>
-<th>100077</th>
-<td>C9orf71</td>
+<th>C9orf71</th>
 <td>Previous symbols</td>
 </tr>
 <tr>
-<th>63503</th>
-<td>MLIV</td>
+<th>MLIV</th>
 <td>Alias symbols</td>
 </tr>
 <tr>
-<th>87301</th>
-<td>SNX26</td>
+<th>SNX26</th>
 <td>Previous symbols</td>
 </tr>
 <tr>
-<th>64675</th>
-<td>hsa-mir-653</td>
+<th>hsa-mir-653</th>
 <td>Alias symbols</td>
 </tr>
 <tr>
-<th>95885</th>
-<td>OR12D1P</td>
+<th>OR12D1P</th>
 <td>Previous symbols</td>
 </tr>
 <tr>
-<th>6474</th>
-<td>DEFB130B</td>
+<th>DEFB130B</th>
 <td>Approved symbol</td>
 </tr>
 <tr>
-<th>15014</th>
-<td>LINC00269</td>
+<th>LINC00269</th>
 <td>Approved symbol</td>
 </tr>
 <tr>
-<th>29565</th>
-<td>RNA5SP167</td>
+<th>RNA5SP167</th>
 <td>Approved symbol</td>
 </tr>
 <tr>
-<th>77819</th>
-<td>HUSI</td>
+<th>HUSI</th>
 <td>Alias symbols</td>
 </tr>
 </tbody>
@@ -7833,7 +7826,7 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># All DEGs (differentially expressed genes) that are listed in FILTERED_GENES are discarded </span>
 <span class="c1"># from differential expression testing results</span>
-<span class="n">FILTERED_GENES</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">FILTERED_GENES</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">"feature_name"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7864,69 +7857,63 @@ a.anchor-link {
 <thead>
 <tr style="text-align: right;">
 <th></th>
-<th>feature_name</th>
 <th>origin</th>
 <th>filter_type</th>
+</tr>
+<tr>
+<th>feature_name</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<th>2777</th>
-<td>RPL31P11</td>
+<th>KCNMA1-AS2</th>
 <td>Approved symbol</td>
+<td>IncRNA</td>
+</tr>
+<tr>
+<th>KLRK1-AS1</th>
+<td>Approved symbol</td>
+<td>IncRNA</td>
+</tr>
+<tr>
+<th>U3-55K</th>
+<td>Alias symbols</td>
 <td>ribosomal</td>
 </tr>
 <tr>
-<th>13098</th>
-<td>NCRNA00235</td>
-<td>Previous symbols</td>
-<td>IncRNA</td>
-</tr>
-<tr>
-<th>9257</th>
-<td>PSMA3-AS1</td>
-<td>Approved symbol</td>
-<td>IncRNA</td>
-</tr>
-<tr>
-<th>3701</th>
-<td>RPSAP32</td>
-<td>Approved symbol</td>
-<td>ribosomal</td>
-</tr>
-<tr>
-<th>14245</th>
-<td>TRBVC</td>
-<td>Approved symbol</td>
-<td>TCR</td>
-</tr>
-<tr>
-<th>13785</th>
-<td>RN7SKP30</td>
-<td>Approved symbol</td>
-<td>IncRNA</td>
-</tr>
-<tr>
-<th>5033</th>
-<td>CLYBL-AS3</td>
-<td>Approved symbol</td>
-<td>IncRNA</td>
-</tr>
-<tr>
-<th>11873</th>
-<td>LOC284454</td>
+<th>RP11-616M22.2</th>
 <td>Alias symbols</td>
 <td>IncRNA</td>
 </tr>
 <tr>
-<th>1761</th>
-<td>RNA5SP428</td>
+<th>LINC00900</th>
+<td>Approved symbol</td>
+<td>IncRNA</td>
+</tr>
+<tr>
+<th>MTATP6P27</th>
+<td>Approved symbol</td>
+<td>mitochondrial</td>
+</tr>
+<tr>
+<th>RPL5P30</th>
 <td>Approved symbol</td>
 <td>ribosomal</td>
 </tr>
 <tr>
-<th>6085</th>
-<td>LGR4-AS1</td>
+<th>C20orf61</th>
+<td>Previous symbols</td>
+<td>IncRNA</td>
+</tr>
+<tr>
+<th>RPSAP46</th>
+<td>Approved symbol</td>
+<td>ribosomal</td>
+</tr>
+<tr>
+<th>PPP4R3B-DT</th>
 <td>Approved symbol</td>
 <td>IncRNA</td>
 </tr>
