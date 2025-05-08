@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>SConnect_tutorial-Copy1</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>SConnect_tutorial</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -8187,7 +8187,7 @@ Fraction of genes in official genes list: 0.887
     <span class="n">adata_ref</span><span class="p">,</span>
     <span class="n">n_top_genes</span><span class="o">=</span><span class="mi">750</span><span class="p">,</span>
     <span class="n">cell_type_column_adata1</span><span class="o">=</span><span class="s2">"cell_type_author"</span><span class="p">,</span>
-    <span class="n">cell_type_column_adata2</span><span class="o">=</span><span class="s2">"cell_type_auhtor"</span><span class="p">,</span>
+    <span class="n">cell_type_column_adata2</span><span class="o">=</span><span class="s2">"cell_type_author"</span><span class="p">,</span>
     <span class="n">sample_column_adata1</span><span class="o">=</span><span class="s2">"sample_id"</span><span class="p">,</span>
     <span class="n">sample_column_adata2</span><span class="o">=</span><span class="s2">"sample_id"</span><span class="p">,</span>
 <span class="p">)</span>
@@ -8346,7 +8346,7 @@ y size: 3.801934496 GB
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="3.-Sanity-check-method-input">3. Sanity check method input<a class="anchor-link" href="#3.-Sanity-check-method-input">¶</a></h2>
+<h2 id="3.-Model-description-&amp;-initial-sanity-checks-of-the-input-data">3. Model description &amp; initial sanity checks of the input data<a class="anchor-link" href="#3.-Model-description-&amp;-initial-sanity-checks-of-the-input-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -8357,12 +8357,28 @@ y size: 3.801934496 GB
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Model description:</strong></p>
 <p>SConnect aims to “align” (or to “connect”) cell-type labels between two datasets from separate studies, suggesting similar clusters or potential matches against the reference dataset for each cell type in the query dataset solely based on the underlying transcriptomic signatures. To achieve this objective, we model each dataset as a point cloud, meaning each data point or cell is associated with a gene expression vector (𝘅) and a cluster / cell-type label (y). Notably, the clustering or grouping information of individual cells uniformly annotated, not the associated string labels, is provided by the cell-type label y. At its core, SConnect uses optimal transport to connect the point cloud distribution of the query dataset with the point cloud from the reference dataset; thus, the method considers the global structure of the data, compared to just finding the closest neighbors in the reference dataset.</p>
-<p>The distance between a cell in the query dataset (described by the multi-dimensional gene expression vector 𝘅1 and cluster label y1) and a cell in the reference dataset (described by the multi-dimensional gene expression vector 𝘅2 and cluster label y2) is split into two parts. The distance measure (also known as the “transport cost”) is the sum between the distance in gene expression space and the distance in label space:
+<p>The distance between a cell in the query dataset (described by the multi-dimensional gene expression vector $𝘅_1$ and cluster label $y_1$) and a cell in the reference dataset (described by the multi-dimensional gene expression vector $𝘅_2$ and cluster label $y_2$) is split into two parts. The distance measure (also known as the “transport cost”) is the sum between the distance in gene expression space and the distance in label space:
 $$
-distance((𝘅_1, y_1), (𝘅_2, y_2)) = distance_{gene\,expression} (𝘅_1, 𝘅_2) + distance_{label}(y_1, y_2)
+distance((𝘅_1, y_1), (𝘅_2, y_2)) = \lambda_{feature} \cdot distance_{gene\,expression} (𝘅_1, 𝘅_2) + \lambda_{label} \cdot distance_{label}(y_1, y_2)
 $$</p>
-<p>One key sanity check is to inspect the label similarity matrix $distance_{label}(y_1, y_2)$. This is computed by looking at the similarity of the top XX differentiall-expressed genes (DEGs) between and a cluster $y_1$ in the query and a cluster $y_2$ in the reference dataset. Specifially, we're for a preditive signal that here that helps to distinguish cell-types.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ef4216eb-64c3-4708-8425-9e510fcb9878">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Doing an initial sanity check:</strong></p>
+<p>First, looking at the above distance measure, we can do an initial sanity check:</p>
+<p>The optimal transport model relies on a predictive distance measure to accurately align cell types between clusters. Hence, as a quick sanity check we can plot the label distance matrix $distance_{label}(y_1, y_2)$ between cell type clusters. The label distance is computed by looking at the similarity of the top XX differentiall-expressed genes (DEGs) between a cluster $y_1$ in the query and a cluster $y_2$ in the reference dataset.</p>
+<p>When looking at the label distance matrix, we want to check if we have a predictive signal that can help with cell-type assignments, e.g., that celltypes which one would expect to match across datasets, are also associated with a low distance (high similarity). Note, that those matches do not need to be perfect, as the there is still the distance between individual cells $distance_{gene\,expression} (𝘅_1, 𝘅_2)$. Moreover, one does not need to make assignments based on this initial sanity check, SConnect is going to do this for you, based on the underlying optimal transport model (See <code>OT mappings</code> section later in the tutorial).</p>
+<p>To give some examples for this initial sanity check, we can see that, indeed, we have a predictive signal that already distinguishes many of the cell types from each other. E.g when looking at the <code>NK_CD56++</code>, <code>B_Naive</code> or <code>T4_Treg</code> clusters from the query dataset.</p>
+<p>As a quick sanity check, this looks all good. As both datasets are immune dataset and we would expect quite a few potential matches where the string labels are the same or quite similar.</p>
 </div>
 </div>
 </div>
@@ -8445,14 +8461,12 @@ $$</p>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Now, looking at the label similarity matrix above, we can see that we have a predictive signal that already distinguishes many of the cell types from each other. E.g when looking at the <code>NK_CD56++</code>, <code>B_Naive</code> or <code>T4_Treg</code> cluster from the query dataset.</p>
-<p>As a quick sanity check, this makes sense. As both datasets are immune dataset and we would expect quite a few potential matches where the string labels are the same or quite similar.</p>
-<p>Additionally, we can look at the DEGs that were used as a basis for the similarity calcualtion. Let's look at two examples:</p>
+<p>Additionally, we can look at the DEGs that were used as a basis for the similarity calcualtion to see based on which genes the similarity between clusters is calcualted and whether those genes are biologically meaningful. Let's look at two examples:</p>
 <ul>
 <li><code>cM</code> → <code>CD14+_Monocyte</code>: Here we can see many CD14+ Monocyte markers, e.g.: <code>CD14</code>, <code>S100A12</code>, <code>S100A8</code>, <code>S100A9</code></li>
 <li><code>T4_Treg</code> → <code>Treg</code>: Here we can see many CD4 T Regulatory cell markers, e.g.: <code>FOXP3</code>, <code>RTKN2</code>, <code>IL32</code>, <code>CTLA4</code>, <code>IL2RA</code></li>
 </ul>
-<p>Again, hinting to the user that the method input makes sense.</p>
+<p>Again, we can see that the method input, indeed, makes sense.</p>
 </div>
 </div>
 </div>
