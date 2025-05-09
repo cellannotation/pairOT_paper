@@ -3,6 +3,7 @@ from typing import Tuple
 
 import anndata
 import pandas as pd
+import scanpy as sc
 
 from datasim.utils import (
     get_expressed_genes_intersection,
@@ -19,6 +20,8 @@ def preprocess_adatas(
     sample_column_adata1: str = "sample_id",
     sample_column_adata2: str = "sample_id",
     filter_genes: bool = False,
+    n_samples_auroc: int = None,
+    n_samples_hvg_selection: int = None,
 ) -> Tuple[anndata.AnnData, anndata.AnnData]:
     """
     Do the following preprocessing steps:
@@ -44,6 +47,12 @@ def preprocess_adatas(
         Name of the column in `adata.obs` that contains the sequencing sample ids/labels for adata1.
     filter_genes: bool = False
         Whether to remove uninformative genes. If true mitochondrial, ribosomal, IncRNA, TCR and BCR genes are removed.
+    n_samples_auroc: int = None
+        Maximum number of samples to use for AUROC calculation. If None, all samples are used. This can drastically
+        reduce computation time for large datasets.
+    n_samples_hvg_selection: int = None
+        Number of samples to use for highly variable gene selection. If None, all samples are used. This can drastically
+        reduce the memory usage for large datasets.
 
     Returns
     -------
@@ -83,11 +92,22 @@ def preprocess_adatas(
     print(f"adata2: {adata2.shape}")
     # calculate DE genes
     print("Calculating differentially-expressed genes...")
-    adata1.uns["de_res_ova"], adata1.uns["de_res_ava"] = calc_pseudobulk_stats(adata1)
-    adata2.uns["de_res_ova"], adata2.uns["de_res_ava"] = calc_pseudobulk_stats(adata2)
+    adata1.uns["de_res_ova"], adata1.uns["de_res_ava"] = calc_pseudobulk_stats(
+        adata1, n_samples_auroc=n_samples_auroc
+    )
+    adata2.uns["de_res_ova"], adata2.uns["de_res_ava"] = calc_pseudobulk_stats(
+        adata2, n_samples_auroc=n_samples_auroc
+    )
     # subset to highly variable genes for Spearman correlation
     print("Sub-setting to highly variable genes...")
-    highly_variable = get_shared_highly_variable_genes(adata1, adata2, n_top_genes)
+    if n_samples_hvg_selection is None:
+        highly_variable = get_shared_highly_variable_genes(adata1, adata2, n_top_genes)
+    else:
+        highly_variable = get_shared_highly_variable_genes(
+            sc.pp.subsample(adata1, n_obs=n_samples_hvg_selection, copy=True),
+            sc.pp.subsample(adata2, n_obs=n_samples_hvg_selection, copy=True),
+            n_top_genes,
+        )
     adata1 = adata1[:, highly_variable].copy()
     adata2 = adata2[:, highly_variable].copy()
     print(f"adata1: {adata1.shape}")

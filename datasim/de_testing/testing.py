@@ -16,6 +16,7 @@ from rpy2.robjects.conversion import localconverter
 from scipy.sparse import csr_matrix
 
 from datasim.de_testing.auroc import calc_auroc, csr_to_csc
+from datasim.utils import downsample_indices
 
 INSTALL_R_PACKAGES = """
 if (!require("BiocManager", quietly = TRUE))
@@ -118,6 +119,35 @@ def _eff_n_jobs(n_jobs: int) -> int:
     return _cpu_count
 
 
+def _calc_auroc_parallel_helper(
+    start_pos,
+    end_pos,
+    data,
+    indices,
+    indptr,
+    n1arr,
+    n2arr,
+    cluster_cumsum,
+    first_j,
+    second_j,
+):
+    # Call the original calc_auroc function
+    res = calc_auroc(
+        start_pos,
+        end_pos,
+        data,
+        indices,
+        indptr,
+        n1arr,
+        n2arr,
+        cluster_cumsum,
+        first_j,
+        second_j,
+    )
+    # Convert result to a NumPy array to ensure it is picklable
+    return np.array(res)
+
+
 def _calc_auroc(
     x: csr_matrix,
     cluster_labels: pd.Series,
@@ -160,7 +190,7 @@ def _calc_auroc(
 
     with parallel_backend("loky", inner_max_num_threads=1):
         result_list = Parallel(n_jobs=len(intervals), temp_folder=None)(
-            delayed(calc_auroc)(
+            delayed(_calc_auroc_parallel_helper)(
                 start_pos,
                 end_pos,
                 data,
@@ -183,14 +213,29 @@ def _calc_auroc(
 
 
 def _get_auroc_scores_ova(
-    x: csr_matrix, cluster_labels: pd.Series, gene_names: pd.Series
+    x: csr_matrix,
+    cluster_labels: pd.Series,
+    gene_names: pd.Series,
+    n_samples_max: int = None,
+    n_jobs: int = 1,
 ) -> Dict[str, pd.Series]:
-    auroc_scores = _calc_auroc(x, cluster_labels, gene_names)
+    if n_samples_max is None:
+        auroc_scores = _calc_auroc(x, cluster_labels, gene_names, n_jobs=n_jobs)
+    else:
+        idxs = downsample_indices(
+            cluster_labels.to_numpy(), n_samples_max, random_state=0
+        )
+        auroc_scores = _calc_auroc(
+            x[idxs, :], cluster_labels.iloc[idxs], gene_names, n_jobs=n_jobs
+        )
     return {ct: auroc_scores[f"{ct}:auroc"] for ct in cluster_labels.unique()}
 
 
 def _get_auroc_scores_ava(
-    x: csr_matrix, cluster_labels: pd.Series, gene_names: pd.Series
+    x: csr_matrix,
+    cluster_labels: pd.Series,
+    gene_names: pd.Series,
+    n_samples_max: int = None,
 ) -> Dict[str, Dict[str, pd.DataFrame]]:
     clusters = sorted(cluster_labels.unique())
     n_clusters = len(clusters)
@@ -202,13 +247,27 @@ def _get_auroc_scores_ava(
         for i in range(n_clusters):
             for j in range(i + 1, n_clusters):
                 ct1, ct2 = clusters[i], clusters[j]
-                scores_subset = _get_auroc_scores_ova(
-                    x[cluster_labels.isin([ct1, ct2]), :],
-                    cluster_labels[
-                        cluster_labels.isin([ct1, ct2])
-                    ].cat.remove_unused_categories(),
-                    gene_names,
-                )
+                x_subset = x[cluster_labels.isin([ct1, ct2]), :]
+                cluster_labels_subset = cluster_labels[
+                    cluster_labels.isin([ct1, ct2])
+                ].cat.remove_unused_categories()
+
+                if n_samples_max is None:
+                    scores_subset = _get_auroc_scores_ova(
+                        x_subset,
+                        cluster_labels_subset,
+                        gene_names,
+                    )
+                else:
+                    idxs = downsample_indices(
+                        cluster_labels_subset.to_numpy(), n_samples_max, random_state=0
+                    )
+                    scores_subset = _get_auroc_scores_ova(
+                        x_subset[idxs, :],
+                        cluster_labels_subset.iloc[idxs],
+                        gene_names,
+                        n_jobs=-1,
+                    )
                 auroc_scores[ct1][ct2] = scores_subset[ct1]
                 auroc_scores[ct2][ct1] = scores_subset[ct2]
                 pbar.update()
@@ -259,6 +318,7 @@ def calc_pseudobulk_stats(
     adata: anndata.AnnData,
     cluster_label: str = "cell_type_author",
     sample_label: str = "sample_id",
+    n_samples_auroc: int = None,
 ):
     if not isinstance(adata.X, csr_matrix):
         adata.X = csr_matrix(adata.X)
@@ -336,14 +396,20 @@ def calc_pseudobulk_stats(
     # calculate AUROC scores for OVA results
     # noinspection PyTypeChecker
     auroc_scores_ova = _get_auroc_scores_ova(
-        adata.X, adata.obs[cluster_label], adata.var.index.to_series()
+        adata.X,
+        adata.obs[cluster_label],
+        adata.var.index.to_series(),
+        n_samples_auroc,
     )
     for ct, de_df in de_res_ova.items():
         de_df["auroc"] = auroc_scores_ova[ct]
     # calculate AUROC scores for AVA results
     # noinspection PyTypeChecker
     auroc_scores_ava = _get_auroc_scores_ava(
-        adata.X, adata.obs[cluster_label], adata.var.index.to_series()
+        adata.X,
+        adata.obs[cluster_label],
+        adata.var.index.to_series(),
+        n_samples_auroc,
     )
     for ct1, de_res in de_res_ava.items():
         for ct2, de_df in de_res.items():

@@ -163,9 +163,38 @@ def get_shared_highly_variable_genes(
         inplace=False,
     )
     size_hvg_intersection = highly_variable["highly_variable_intersection"].sum()
-    if size_hvg_intersection < n_top_genes:
-        warnings.warn(
-            f"Only {size_hvg_intersection} of {n_top_genes} genes are highly variable in both datasets."
-        )
 
     return highly_variable["highly_variable"].to_numpy()
+
+
+def downsample_indices(
+    labels: np.ndarray, n_samples: int, random_state: int | None = 0
+) -> np.ndarray:
+    """
+    Downsamples an array of labels and returns the indices to keep.
+    For each unique label, if there are fewer than n_samples,
+    keep all indices; otherwise, randomly sample n_samples indices.
+
+    Parameters:
+        labels: A numpy array or list of labels.
+        n_samples: Minimum number of samples to uniformly sample per label.
+        random_state: Seed for reproducibility (optional).
+
+    Returns:
+        A numpy array of indices corresponding to the selected samples.
+    """
+    rng = np.random.default_rng(random_state)
+    labels_series = pd.Series(labels)
+    keep_indices = []
+
+    for label, group in labels_series.groupby(labels_series):
+        indices = group.index.to_numpy()
+        if len(indices) < n_samples:
+            # Keep all indices if the sampled count is lower than min_samples
+            keep_indices.append(indices)
+        else:
+            sampled = rng.choice(indices, size=n_samples, replace=False)
+            keep_indices.append(sampled)
+
+    result = np.concatenate(keep_indices)
+    return result
