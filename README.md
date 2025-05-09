@@ -97,7 +97,11 @@ Please see the following tutorials for detailed examples of how to use SConnect:
 
 ### SConnect: Detailed explanation
 * [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial.ipynb)
-* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial.html?token=GHSAT0AAAAAAC454HSO6MWB4UXAHCVJR5IU2A2BR5A)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial.html)
+
+### SConnect: Fit SConnect with reduced compute requirements / Speed up SConnect computations
+* [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial_reduce_compute_requirements.ipynb)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial_reduce_compute_requirements.html)
 
 ## Installation
 
