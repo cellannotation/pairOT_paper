@@ -96,10 +96,13 @@ plot_cluster_distance(distance)  # cluster distance matrix
 Please see the following tutorials for detailed examples of how to use SConnect:
 
 ### SConnect: Detailed explanation
+This tutorial gives detailed instructions on how to use SConnect.
 * [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial.ipynb)
 * [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial.html)
 
 ### SConnect: Fit SConnect with reduced compute requirements / Speed up SConnect computations
+This tutorial shows how to speedup SConnect computations. This is especially relevant if only limited compute resources
+are available or for very large datasets.
 * [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial_reduce_compute_requirements.ipynb)
 * [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial_reduce_compute_requirements.html)
 
