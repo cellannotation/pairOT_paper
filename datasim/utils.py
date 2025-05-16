@@ -162,7 +162,6 @@ def get_shared_highly_variable_genes(
         batch_key="dataset",
         inplace=False,
     )
-    size_hvg_intersection = highly_variable["highly_variable_intersection"].sum()
 
     return highly_variable["highly_variable"].to_numpy()
 
