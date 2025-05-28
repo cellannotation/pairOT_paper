@@ -80,6 +80,7 @@ SEARCH_SPACE = {
     #     "values": [
     #         "0f528c8a-a25c-4840-8fa3-d156fa11086f",
     #         "0f528c8a-a25c-4840-8fa3-d156fa11086f_Treg",
+    #         "0f528c8a-a25c-4840-8fa3-d156fa11086f_aFIB",
     #     ],
     #     "include_in_version": True,
     # },

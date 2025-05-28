@@ -25,7 +25,6 @@ SCRIPT_ARGS+="--query_dataset={query_dataset} "
 SCRIPT_ARGS+="--ref_dataset={ref_dataset} "
 SCRIPT_ARGS+="--query_ct_column={query_ct_column} "
 SCRIPT_ARGS+="--ref_ct_column={ref_ct_column} "
-SCRIPT_ARGS+="--filter_genes={filter_genes} "
 
 srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
      --container-mounts=$CONTAINER_MOUNTS --container-image=$CONTAINER_IMAGE \
@@ -73,6 +72,10 @@ SEARCH_SPACE = {
     #         "0f528c8a-a25c-4840-8fa3-d156fa11086f_Treg",
     #         "cell_type_author",
     #     ),
+    #     (
+    #         "0f528c8a-a25c-4840-8fa3-d156fa11086f_aFIB",
+    #         "cell_type_author",
+    #     ),
     # ],
     # "query": [
     #     (
@@ -95,7 +98,6 @@ SEARCH_SPACE = {
     #     ),  # colon
     # ],
     "n_top_genes": [750],
-    "filter_genes": [False],
 }
 
 
@@ -104,12 +106,10 @@ if __name__ == "__main__":
         (query, query_ct_col),
         (ref, ref_ct_col),
         n_top_genes,
-        filter_genes,
     ) in itertools.product(
         SEARCH_SPACE["query"],
         SEARCH_SPACE["ref"],
         SEARCH_SPACE["n_top_genes"],
-        SEARCH_SPACE["filter_genes"],
     ):
         job_script = JOB_SCRIPT.format(
             n_top_genes=n_top_genes,
@@ -117,7 +117,6 @@ if __name__ == "__main__":
             ref_dataset=ref,
             query_ct_column=query_ct_col,
             ref_ct_column=ref_ct_col,
-            filter_genes=filter_genes,
         )
         with open("job_script.sbatch", "w") as f:
             f.write(job_script)
