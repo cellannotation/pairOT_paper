@@ -60,6 +60,9 @@ def preprocess_adatas(
     """
     from datasim.de_testing.testing import calc_pseudobulk_stats
 
+    adata1.X = adata1.X.astype("float32")
+    adata2.X = adata2.X.astype("float32")
+
     adata1.obs["cell_type_author"] = adata1.obs[cell_type_column_adata1]
     adata1.obs["sample_id"] = adata1.obs[sample_column_adata1]
     adata2.obs["cell_type_author"] = adata2.obs[cell_type_column_adata2]
