@@ -262,7 +262,7 @@ def _get_auroc_scores_ava(
         for i in range(n_clusters):
             for j in range(i + 1, n_clusters):
                 ct1, ct2 = clusters[i], clusters[j]
-                x_subset = x[cluster_labels.isin([ct1, ct2]), :]
+                x_subset = x[cluster_labels.isin([ct1, ct2]).to_numpy(), :]
                 cluster_labels_subset = cluster_labels[
                     cluster_labels.isin([ct1, ct2])
                 ].cat.remove_unused_categories()
