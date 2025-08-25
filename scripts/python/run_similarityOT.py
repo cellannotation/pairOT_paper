@@ -4,8 +4,8 @@ import json
 import os
 from os.path import join, isfile
 
-from datasim.dataset_ot import DatasetMapping
-from datasim.plotting import plot_cluster_mapping, plot_cluster_distance, plot_sankey
+from sconnect.dataset_ot import DatasetMapping
+from sconnect.plotting import plot_cluster_mapping, plot_cluster_distance, plot_sankey
 from utils import load_data_cached, none_or_str
 
 

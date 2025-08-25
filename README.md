@@ -12,7 +12,8 @@
 ## SConnect: Identifying the similar cell types and cell states across heterogeneous studies.
 
 * **What is SConnect?**
-SConnect is a Python package to align cell annotations between single-cell RNA-seq datasets. Given the cell-type 
+  
+  SConnect is a Python package to align cell annotations between single-cell RNA-seq datasets. Given the cell-type 
 annotations of two datasets, SConnect shows the similarity of the respective cell type clusters. Hence, SConnect can be 
 used to identify similar cell types and cell states between the two studies and to show to the user where there might be 
 disagreements between cell annotations of the two datasets.
@@ -34,7 +35,8 @@ sum between the distance in gene expression space and the distance in label spac
 ![distance_equation](docs/distance_equation.png)
 
 * **What does it produce?**
-SConnect produces two key outputs:
+
+  SConnect produces two key outputs:
 
   * **Similarity Matrix**: Showing the closest matching (considering the global structure of the data) cell-type in the 
 reference dataset for each cell-type in the query dataset.
@@ -43,7 +45,9 @@ reference dataset for each cell-type in the query dataset.
 dataset.
 ![distance](docs/distance_example.png)
 
-* **What are the advantages over existing methods?** We improve over existing methods in two key ways:
+* **What are the advantages over existing methods?** 
+
+  We improve over existing methods in two key ways:
   1. Using a considerably more predictive distance measure: By including information of differentially expressed genes 
 in the distance measure we're able to resolve differences between fine-grained cell-type subtypes.
   2. Considering the global structure of the data: By using optimal transport we consider the global structure of the 
@@ -55,7 +59,7 @@ data and thus are able to provide more trustworthy suggestions.
 ```python
 import scanpy as sc
 
-from datasim.preprocessing import preprocess_adatas
+from sconnect.preprocessing import preprocess_adatas
 
 # 1. Preprocess input data
 adata_query, adata_ref = preprocess_adatas(
@@ -69,7 +73,7 @@ adata_query, adata_ref = preprocess_adatas(
 )
 
 # 2. Initialize SConnect model
-from datasim.dataset_ot import DatasetMapping
+from sconnect.dataset_ot import DatasetMapping
 
 dataset_map = DatasetMapping(adata_query, adata_ref)
 dataset_map.init_geom(batch_size=512, epsilon=0.05)
@@ -81,7 +85,7 @@ mapping = dataset_map.compute_cluster_mapping(aggregation_method="mean")
 distance = dataset_map.compute_cluster_distances()
 
 # 4. Visualize results
-from datasim.plotting import plot_cluster_mapping, plot_cluster_distance
+from sconnect.plotting import plot_cluster_mapping, plot_cluster_distance
 
 plot_cluster_mapping(mapping)  # similarity matrix
 distance = distance.loc[
@@ -124,8 +128,8 @@ docker pull felix0097/pseudobulk:v1
 #### Python dependencies
 Install via:
 ```bash
-git clone git@github.com:cellannotation/dataset-similarity.git
-cd dataset-similarity
+git clone git@github.com:cellannotation/SConnect.git
+cd SConnect
 pip install -e .
 ```
 
@@ -181,7 +185,7 @@ To scale to atlas-scale datasets, we recommend:
 
 
 ## Project structure
-* `datasim/`: Contains the code for the SConnect package and the differential expression testing code
+* `sconnect/`: Contains the code for the SConnect package and the differential expression testing code
 * `docs/`: Contains the documentation and tutorial notebooks for SConnect
 * `notebooks/`
   * `DEG-filtering/`: Code used to create gene list to filter differentially expressed genes.
@@ -199,4 +203,4 @@ MIT license
 `SConnect` was written by `Felix Fischer <felix.fischer@helmholtz-munich.de>`
 
 Support for software development, testing, modeling, and benchmarking provided by the Cell Annotation Platform team 
-(Roman Mukhin, Andrey Isaev, Uğur Bayındır)
+(Roman Mukhin)

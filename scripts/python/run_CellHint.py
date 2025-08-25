@@ -8,7 +8,7 @@ import cellhint
 import numpy as np
 import scanpy as sc
 
-from datasim.plotting import plot_cluster_mapping
+from sconnect.plotting import plot_cluster_mapping
 from utils import load_data_cached
 
 

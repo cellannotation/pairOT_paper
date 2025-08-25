@@ -18,8 +18,8 @@ from scipy.spatial.distance import jensenshannon
 from scipy.stats import rankdata
 from sklearn.utils.class_weight import compute_class_weight
 
-from datasim.label_distance import de_gene_rank_difference_distance
-from datasim.preprocessing import preprocess_adatas
+from sconnect.label_distance import de_gene_rank_difference_distance
+from sconnect.preprocessing import preprocess_adatas
 
 
 def cosine_distance(x: jnp.ndarray, y: jnp.ndarray):

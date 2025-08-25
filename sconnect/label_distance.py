@@ -5,12 +5,12 @@ from scipy.sparse import csr_matrix
 from scipy.stats import spearmanr
 from tqdm.notebook import tqdm
 
-from datasim.de_testing.selection import (
+from sconnect.de_testing.selection import (
     select_and_combine_de_results,
     sort_and_filter_de_genes_ova,
     sort_and_filter_de_genes_ava,
 )
-from datasim.utils import (
+from sconnect.utils import (
     _bures_wasserstein,
     _calc_cov,
     _calc_mean,

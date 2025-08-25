@@ -43,18 +43,18 @@ srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
 
 
 SEARCH_SPACE = {
-    "query": {
-        "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
-        "include_in_version": True,
-    },
-    "ref": {
-        "values": [
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP_NKT_CD3E",
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP",
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP_CD4_naive",
-        ],
-        "include_in_version": True,
-    },
+    # "query": {
+    #     "values": ["7d7cabfd-1d1f-40af-96b7-26a0825a306d"],
+    #     "include_in_version": True,
+    # },
+    # "ref": {
+    #     "values": [
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP_NKT_CD3E",
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP",
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP_CD4_naive",
+    #     ],
+    #     "include_in_version": True,
+    # },
     #
     # "query": {
     #     "values": [
@@ -100,6 +100,14 @@ SEARCH_SPACE = {
     #     "include_in_version": True,
     # },
     #
+    "query": {
+        "values": ["arthritis_Felix", "colitis_Felix"],
+        "include_in_version": True,
+    },
+    "ref": {
+        "values": ["arthritis_Felix", "colitis_Felix"],
+        "include_in_version": True,
+    },
     "n_top_genes": {"values": [750], "include_in_version": False},
     "n_genes_ova": {
         "values": [10],  # 15 for macrophage example
@@ -111,7 +119,7 @@ SEARCH_SPACE = {
     },
     "batch_size": {"values": [4096], "include_in_version": False},
     "tau": {
-        "values": [1.0],  # 0.95 for bone marrow and macrophage examples
+        "values": [0.95, 0.975, 1.0],  # 0.95 for bone marrow and macrophage examples
         "include_in_version": True,
     },
     "epsilon": {
@@ -159,6 +167,9 @@ if __name__ == "__main__":
         SEARCH_SPACE["overlap_threshold_ava"]["values"],
         SEARCH_SPACE["overlap_n_genes_ava"]["values"],
     ):
+        if query == ref:
+            continue
+
         version = []
         for k, v in [
             ("query", query),

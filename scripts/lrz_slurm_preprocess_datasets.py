@@ -34,21 +34,21 @@ srun --cpu-bind=verbose,socket --accel-bind=g --gres=gpu:1 \
 
 
 SEARCH_SPACE = {
-    "query": [("7d7cabfd-1d1f-40af-96b7-26a0825a306d", "cell_type_author")],
-    "ref": [
-        (
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP",
-            "cell_type_author",
-        ),
-        (
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP_NKT_CD3E",
-            "cell_type_author",
-        ),
-        (
-            "ced320a1-29f3-47c1-a735-513c7084d508_CAP_CD4_naive",
-            "cell_type_author",
-        ),
-    ],
+    # "query": [("7d7cabfd-1d1f-40af-96b7-26a0825a306d", "cell_type_author")],
+    # "ref": [
+    #     (
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP",
+    #         "cell_type_author",
+    #     ),
+    #     (
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP_NKT_CD3E",
+    #         "cell_type_author",
+    #     ),
+    #     (
+    #         "ced320a1-29f3-47c1-a735-513c7084d508_CAP_CD4_naive",
+    #         "cell_type_author",
+    #     ),
+    # ],
     # "query": [("f6c50495-3361-40ed-a819-fb9644396ed9_updated", "cell_type_author")],
     # "ref": [
     #     (
@@ -97,6 +97,14 @@ SEARCH_SPACE = {
     #         "cell_type_author",
     #     ),  # colon
     # ],
+    "query": [
+        ("arthritis_Felix", "cell_type_author"),
+        ("colitis_Felix", "cell_type_author"),
+    ],
+    "ref": [
+        ("arthritis_Felix", "cell_type_author"),
+        ("colitis_Felix", "cell_type_author"),
+    ],
     "n_top_genes": [750],
 }
 
@@ -111,6 +119,8 @@ if __name__ == "__main__":
         SEARCH_SPACE["ref"],
         SEARCH_SPACE["n_top_genes"],
     ):
+        if query == ref:
+            continue
         job_script = JOB_SCRIPT.format(
             n_top_genes=n_top_genes,
             query_dataset=query,

@@ -15,8 +15,8 @@ from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
 from scipy.sparse import csr_matrix
 
-from datasim.de_testing.auroc import calc_auroc, csr_to_csc
-from datasim.utils import downsample_indices
+from sconnect.de_testing.auroc import calc_auroc, csr_to_csc
+from sconnect.utils import downsample_indices
 
 INSTALL_R_PACKAGES = """
 if (!require("BiocManager", quietly = TRUE))
