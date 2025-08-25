@@ -107,8 +107,12 @@ def preprocess_adatas(
         highly_variable = get_shared_highly_variable_genes(adata1, adata2, n_top_genes)
     else:
         highly_variable = get_shared_highly_variable_genes(
-            sc.pp.subsample(adata1, n_obs=n_samples_hvg_selection, copy=True),
-            sc.pp.subsample(adata2, n_obs=n_samples_hvg_selection, copy=True),
+            sc.pp.subsample(adata1, n_obs=n_samples_hvg_selection, copy=True)
+            if n_samples_hvg_selection < adata1.n_obs
+            else adata1,
+            sc.pp.subsample(adata2, n_obs=n_samples_hvg_selection, copy=True)
+            if n_samples_hvg_selection < adata2.n_obs
+            else adata2,
             n_top_genes,
         )
     adata1 = adata1[:, highly_variable].copy()
