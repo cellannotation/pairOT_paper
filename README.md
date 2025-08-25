@@ -5,7 +5,8 @@
 - [Tutorial](#tutorial)
 - [Installation](#installation)
   - [Running SConnect via Docker](#running-sconnect-via-docker)
-  - [Manual installation](#install-sconnect-manually)
+  - [Installing SConnect via pip](#install-sconnect-via-pip)
+  - [Installing SConnect via Anaconda](#install-sconnect-via-anaconda)
 - [Project structure](#project-structure)
 - [References](#references)
 
