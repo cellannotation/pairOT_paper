@@ -115,22 +115,54 @@ are available or for very large datasets.
 ### Running SConnect via Docker
 To run SConnect, we provide a docker image that contains all the necessary dependencies: https://hub.docker.com/r/felix0097/sconnect/tags
 ```bash
-docker pull felix0097/sconnect:v1
+docker pull felix0097/sconnect:full_v1
 ```
 
-To run the R differential expression testing code (pre-processing), we provide a separate docker image: https://hub.docker.com/r/felix0097/pseudobulk/tags
+### Install SConnect via pip
+
+#### Install R
+To run the R differential expression testing code (pre-processing), you'll need to install R on your system.
+Please See the offical R documentation for installation instructions: https://cran.r-project.org/bin/linux/ubuntu/fullREADME.html#installing-r
+
+#### Install SConnect via pip
 ```bash
-docker pull felix0097/pseudobulk:v1
+git clone git@github.com:cellannotation/SConnect.git
+cd SConnect
+pip install ".[de_testing]"
 ```
 
-### Install SConnect manually
+#### Install R dependencies
+To install the R dependencies, open an Python console and run the following commands:
+
+```python
+import rpy2.robjects as ro
+
+INSTALL_R_PACKAGES_LATETST = """
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+    
+BiocManager::install("limma")
+BiocManager::install("rhdf5")
+install.packages("Matrix")
+install.packages("magrittr")
+install.packages("data.table")
+install.packages("glue")
+install.packages("stringr")
+"""
+
+ro.r(INSTALL_R_PACKAGES_LATETST)
+```
+It might take a while to install all R dependencies.
+
+
+### Install SConnect via Anaconda
 
 #### Python dependencies
 Install via:
 ```bash
 git clone git@github.com:cellannotation/SConnect.git
 cd SConnect
-pip install -e .
+pip install .
 ```
 
 For more details to install ``jax``, see: https://docs.jax.dev/en/latest/installation.html

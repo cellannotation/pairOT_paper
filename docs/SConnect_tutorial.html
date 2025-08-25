@@ -7312,6 +7312,7 @@ a.anchor-link {
                     processEnvironments: true
                 },
                 displayAlign: 'center',
+                messageStyle: 'none',
                 CommonHTML: {
                     linebreaks: {
                     automatic: true
@@ -7556,13 +7557,13 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">anndata</span> <span class="k">as</span> <span class="nn">ad</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
+
+<span class="kn">import</span> <span class="nn">anndata</span> <span class="k">as</span> <span class="nn">ad</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Image</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">join</span>
 </pre></div>
 </div>
 </div>
@@ -7588,38 +7589,8 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Docker containers:</strong></p>
 <ul>
-<li>SConnect Docker container: <a href="https://hub.docker.com/repository/docker/felix0097/sconnect/general">https://hub.docker.com/repository/docker/felix0097/sconnect/general</a><ul>
-<li>This container should be used to run the following sections in this notebook:<ul>
-<li><ol start="2">
-<li>Initialize SConnect model &amp; checking method input</li>
-</ol>
-</li>
-<li><ol start="3">
-<li>Sanity check method input</li>
-</ol>
-</li>
-<li><ol start="4">
-<li>Fit SConnect model</li>
-</ol>
-</li>
-<li><ol start="5">
-<li>Interpreting results of SConnect</li>
-</ol>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Differential expression testing: <a href="https://hub.docker.com/repository/docker/felix0097/pseudobulk/general">https://hub.docker.com/repository/docker/felix0097/pseudobulk/general</a><ul>
-<li>This container should be used to run the following sections in this notebook:<ul>
-<li><ol>
-<li>Data preparation</li>
-</ol>
-</li>
-</ul>
-</li>
-</ul>
-</li>
+<li>SConnect Docker container: <a href="https://hub.docker.com/repository/docker/felix0097/sconnect/general">https://hub.docker.com/repository/docker/felix0097/sconnect/general</a></li>
+<li><code>docker pull felix0097/sconnect:full_v1</code></li>
 </ul>
 <p><strong>Datasets:</strong></p>
 <ul>
@@ -7654,8 +7625,8 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datasim.preprocessing</span> <span class="kn">import</span> <span class="n">preprocess_adatas</span>
-<span class="kn">from</span> <span class="nn">datasim.de_testing.selection</span> <span class="kn">import</span> <span class="n">OFFICIAL_GENES</span><span class="p">,</span> <span class="n">FILTERED_GENES</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sconnect.preprocessing</span> <span class="kn">import</span> <span class="n">preprocess_adatas</span>
+<span class="kn">from</span> <span class="nn">sconnect.de_testing.selection</span> <span class="kn">import</span> <span class="n">OFFICIAL_GENES</span><span class="p">,</span> <span class="n">FILTERED_GENES</span>
 </pre></div>
 </div>
 </div>
@@ -8237,7 +8208,7 @@ Fraction of genes in official genes list: 0.887
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datasim.dataset_ot</span> <span class="kn">import</span> <span class="n">DatasetMapping</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sconnect.dataset_ot</span> <span class="kn">import</span> <span class="n">DatasetMapping</span>
 </pre></div>
 </div>
 </div>
@@ -8390,7 +8361,7 @@ $$</p>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datasim.plotting</span> <span class="kn">import</span> <span class="n">plot_cluster_mapping</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sconnect.plotting</span> <span class="kn">import</span> <span class="n">plot_cluster_mapping</span>
 </pre></div>
 </div>
 </div>
@@ -8836,7 +8807,7 @@ $$</p>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datasim.plotting</span> <span class="kn">import</span> <span class="n">plot_cluster_mapping</span><span class="p">,</span> <span class="n">plot_cluster_distance</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sconnect.plotting</span> <span class="kn">import</span> <span class="n">plot_cluster_mapping</span><span class="p">,</span> <span class="n">plot_cluster_distance</span>
 </pre></div>
 </div>
 </div>

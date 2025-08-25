@@ -33,6 +33,21 @@ install_version("glue", version = "1.7.0")
 install_version("stringr", version = "1.5.1")
 """
 
+
+INSTALL_R_PACKAGES_LATETST = """
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+    
+BiocManager::install("limma")
+BiocManager::install("rhdf5")
+install.packages("Matrix")
+install.packages("magrittr")
+install.packages("data.table")
+install.packages("glue")
+install.packages("stringr")
+"""
+
+
 R_DE_TEST_CODE = """
 library(limma)
 library(rhdf5)
