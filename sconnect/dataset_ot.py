@@ -112,7 +112,7 @@ class CellCellTransportCost(ott.geometry.costs.CostFn):
         self.lambda_feature = lambda_feature
         self.lambda_label = lambda_label
 
-    def pairwise(self, x, y):
+    def __call__(self, x: jnp.ndarray, y: jnp.ndarray) -> float:
         x_, x_label = x[:-1], x[-1].astype(int)
         y_, y_label = y[:-1], y[-1].astype(int)
 
