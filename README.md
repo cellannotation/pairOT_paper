@@ -136,7 +136,8 @@ cd SConnect
 pip install ".[de_testing]"
 ```
 
-To make JAX recognize your GPU/TPU, see https://docs.jax.dev/en/latest/installation.html#installation
+By default, the installed JAX version only uses the CPU to make JAX recognize your GPU/TPU, 
+see https://docs.jax.dev/en/latest/installation.html#installation
 ```bash
 pip install -U "jax[cuda12]"
 ```
