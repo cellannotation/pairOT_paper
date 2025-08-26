@@ -6,7 +6,6 @@
 - [Installation](#installation)
   - [Running SConnect via Docker](#running-sconnect-via-docker)
   - [Installing SConnect via pip](#install-sconnect-via-pip)
-  - [Installing SConnect via Anaconda](#install-sconnect-via-anaconda)
 - [Project structure](#project-structure)
 - [References](#references)
 
@@ -103,13 +102,13 @@ Please see the following tutorials for detailed examples of how to use SConnect:
 ### SConnect: Detailed explanation
 This tutorial gives detailed instructions on how to use SConnect.
 * [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial.ipynb)
-* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial.html)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/SConnect/refs/heads/devel/docs/SConnect_tutorial.html)
 
 ### SConnect: Fit SConnect with reduced compute requirements / Speed up SConnect computations
 This tutorial shows how to speedup SConnect computations. This is especially relevant if only limited compute resources
 are available or for very large datasets.
 * [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial_reduce_compute_requirements.ipynb)
-* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/dataset-similarity/refs/heads/devel/docs/SConnect_tutorial_reduce_compute_requirements.html)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/SConnect/refs/heads/devel/docs/SConnect_tutorial_reduce_compute_requirements.html)
 
 ## Installation
 
@@ -123,8 +122,13 @@ docker pull felix0097/sconnect:full_v1
 
 #### Install R
 To run the R differential expression testing code (pre-processing), you'll need to install R on your system.
-Please See the offical R documentation for installation instructions: https://cran.r-project.org/bin/linux/ubuntu/fullREADME.html#installing-r
 
+You can either do it via Anaconda:
+```bash
+conda install conda-forge::r-base
+```
+Or install R directly on your system. 
+Please refer to the official R documentation for installation instructions: https://cran.r-project.org/bin/linux/ubuntu/fullREADME.html#installing-r
 #### Install SConnect via pip
 ```bash
 git clone git@github.com:cellannotation/SConnect.git
@@ -132,8 +136,13 @@ cd SConnect
 pip install ".[de_testing]"
 ```
 
+To make JAX recognize your GPU/TPU, see https://docs.jax.dev/en/latest/installation.html#installation
+```bash
+pip install -U "jax[cuda12]"
+```
+
 #### Install R dependencies
-To install the R dependencies, open an Python console and run the following commands:
+To install the required R dependencies, open a Python console and run the following commands:
 
 ```python
 import rpy2.robjects as ro
@@ -155,55 +164,6 @@ ro.r(INSTALL_R_PACKAGES_LATETST)
 ```
 It might take a while to install all R dependencies.
 
-
-### Install SConnect via Anaconda
-
-#### Python dependencies
-Install via:
-```bash
-git clone git@github.com:cellannotation/SConnect.git
-cd SConnect
-pip install .
-```
-
-For more details to install ``jax``, see: https://docs.jax.dev/en/latest/installation.html
-
-#### R dependencies (only need for pre-processing code)
-1. Setup conda environment
-    * ``conda create -n pseudobulk python==3.10``
-    * Python 3.10 is important for the ``rpy2`` dependency to work correctly.
-2. Install ``rpy2``
-    * ``conda install rpy2==3.5.11``
-    * ``rpy2`` version ``3.5.11`` uses ``R4.3`` which is need for all R dependencies.
-    * If you use a different R version, you'll need to update the package versions of the R dependencies accordingly.
-    * It's recommended to install ``rpy2`` via conda, as this already installs R on your system.
-3. Install other python dependencies:
-   * ``cython>=3.0.11``
-   *  ``joblib>=1.4.2``
-4. Install R dependencies
-    * Open a `python` console and run the following commands:
-    ```python
-    import rpy2.robjects as ro
-   
-    INSTALL_R_PACKAGES = """
-    if (!require("BiocManager", quietly = TRUE))
-       install.packages("BiocManager")
-    BiocManager::install("limma")
-    
-    install.packages("remotes")
-    library(remotes)
-    install_version("rhdf5", version = "2.46.1", repos = "https://bioconductor.org/packages/3.18/bioc")
-    install_version("Matrix", version = "1.6-0")
-    install_version("magrittr", version = "2.0.3")
-    install_version("data.table", version = "1.15.4")
-    install_version("glue", version = "1.7.0")
-    install_version("stringr", version = "1.5.1")
-    """
-   
-    ro.r(INSTALL_R_PACKAGES)
-    ```
-   * Important: You might have to install the ``binutils`` package on your system to install the above R packages. You 
-   can do this by running the following command: ``sudo apt update && sudo apt install binutils``
 
 ### System requirements
 Operating system: Ubuntu 22.04 LTS (used OS version)
