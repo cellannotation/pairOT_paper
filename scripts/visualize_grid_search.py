@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from dash import Dash, html, dcc, Input, Output, callback, dash_table, State, ctx
 
-from sconnect.plotting import plot_cluster_mapping, plot_cluster_distance
+from pairot.plotting import plot_cluster_mapping, plot_cluster_distance
 
 DATA_DIR = "/Users/felix.fischer/similarityOT"
 

@@ -1,31 +1,39 @@
-# SConnect
+[//]: # (# pairOT)
 
-- [Introduction](#sconnect-identifying-the-similar-cell-types-and-cell-states-across-heterogeneous-studies)
-- [Basics of using SConnect](#basics-of-using-sconnect)
+<p align="center">
+  <img src="docs/pairOT-logo.png" alt="pairOT Logo" width="750"/>
+</p>
+
+
+--------------------------------------------------------------------------------
+
+
+- [Introduction](#pairOT-identifying-the-similar-cell-types-and-cell-states-across-heterogeneous-studies)
+- [Basics of using pairOT](#basics-of-using-pairOT)
 - [Tutorial](#tutorial)
 - [Installation](#installation)
-  - [Running SConnect via Docker](#running-sconnect-via-docker)
-  - [Installing SConnect via pip](#install-sconnect-via-pip)
+  - [Running pairOT via Docker](#running-pairOT-via-docker)
+  - [Installing pairOT via pip](#install-pairOT-via-pip)
 - [Project structure](#project-structure)
 - [References](#references)
 
-## SConnect: Identifying the similar cell types and cell states across heterogeneous studies.
+## pairOT: Identifying the similar cell types and cell states across heterogeneous studies.
 
-* **What is SConnect?**
+* **What is pairOT?**
   
-  SConnect is a Python package to align cell annotations between single-cell RNA-seq datasets. Given the cell-type 
-annotations of two datasets, SConnect shows the similarity of the respective cell type clusters. Hence, SConnect can be 
+  pairOT is a Python package to align cell annotations between single-cell RNA-seq datasets. Given the cell-type 
+annotations of two datasets, pairOT shows the similarity of the respective cell type clusters. Hence, pairOT can be 
 used to identify similar cell types and cell states between the two studies and to show to the user where there might be 
 disagreements between cell annotations of the two datasets.
 
 
-* **How does it work?** ![SConnect](docs/SConnect.png)
-SConnect aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets 
+* **How does it work?** ![pairOT](docs/pairOT.png)
+pairOT aims to “align” (or to “connect”) cell-type labels between two scRNA-seq datasets 
 (query + reference dataset), suggesting similar clusters or potential matches against the reference dataset for each 
 cell type in the query dataset solely based on the underlying transcriptomic signatures. To achieve this task, we model 
 each dataset as a point cloud, meaning each data point or cell is associated with a gene expression vector (𝘅) and a 
 cluster / cell-type label (y). Notably, the clustering or grouping information of individual cells uniformly annotated, 
-not the associated string labels, is provided by the cell-type label y. At its core, SConnect uses optimal transport to 
+not the associated string labels, is provided by the cell-type label y. At its core, pairOT uses optimal transport to 
 connect the point cloud distribution of the query dataset with the point cloud from the reference dataset; thus, the 
 method considers the global structure of the data, compared to just finding the closest neighbors in the reference dataset.  
 The distance between a cell in the query dataset (described by the multi-dimensional gene expression vector 𝘅₁ and 
@@ -36,7 +44,7 @@ sum between the distance in gene expression space and the distance in label spac
 
 * **What does it produce?**
 
-  SConnect produces two key outputs:
+  pairOT produces two key outputs:
 
   * **Similarity Matrix**: Showing the closest matching (considering the global structure of the data) cell-type in the 
 reference dataset for each cell-type in the query dataset.
@@ -54,12 +62,12 @@ in the distance measure we're able to resolve differences between fine-grained c
 data and thus are able to provide more trustworthy suggestions.
 
 
-## Basics of using SConnect
+## Basics of using pairOT
 
 ```python
 import scanpy as sc
 
-from sconnect.preprocessing import preprocess_adatas
+from pairot.preprocessing import preprocess_adatas
 
 # 1. Preprocess input data
 adata_query, adata_ref = preprocess_adatas(
@@ -72,20 +80,20 @@ adata_query, adata_ref = preprocess_adatas(
     sample_column_adata2="sequencing_sample_column_ref",
 )
 
-# 2. Initialize SConnect model
-from sconnect.dataset_ot import DatasetMapping
+# 2. Initialize pairOT model
+from pairot.dataset_ot import DatasetMapping
 
 dataset_map = DatasetMapping(adata_query, adata_ref)
 dataset_map.init_geom(batch_size=512, epsilon=0.05)
 dataset_map.init_problem(tau_a=1.0, tau_b=1.0)
 
-# 3. Fit SConnect model
+# 3. Fit pairOT model
 dataset_map.solve()
 mapping = dataset_map.compute_cluster_mapping(aggregation_method="mean")
 distance = dataset_map.compute_cluster_distances()
 
 # 4. Visualize results
-from sconnect.plotting import plot_cluster_mapping, plot_cluster_distance
+from pairot.plotting import plot_cluster_mapping, plot_cluster_distance
 
 plot_cluster_mapping(mapping)  # similarity matrix
 distance = distance.loc[
@@ -97,28 +105,28 @@ plot_cluster_distance(distance)  # cluster distance matrix
 
 
 ## Tutorial
-Please see the following tutorials for detailed examples of how to use SConnect:
+Please see the following tutorials for detailed examples of how to use pairOT:
 
-### SConnect: Detailed explanation
-This tutorial gives detailed instructions on how to use SConnect.
-* [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial.ipynb)
-* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/SConnect/refs/heads/devel/docs/SConnect_tutorial.html)
+### pairOT: Detailed explanation
+This tutorial gives detailed instructions on how to use pairOT.
+* [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/pairOT_tutorial.ipynb)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/pairOT/refs/heads/devel/docs/pairOT_tutorial.html)
 
-### SConnect: Fit SConnect with reduced compute requirements / Speed up SConnect computations
-This tutorial shows how to speedup SConnect computations. This is especially relevant if only limited compute resources
+### pairOT: Fit pairOT with reduced compute requirements / Speed up pairOT computations
+This tutorial shows how to speedup pairOT computations. This is especially relevant if only limited compute resources
 are available or for very large datasets.
-* [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/SConnect_tutorial_reduce_compute_requirements.ipynb)
-* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/SConnect/refs/heads/devel/docs/SConnect_tutorial_reduce_compute_requirements.html)
+* [Jupyter Notebook](https://github.com/cellannotation/dataset-similarity/blob/devel/docs/pairOT_tutorial_reduce_compute_requirements.ipynb)
+* [HTML version](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cellannotation/pairOT/refs/heads/devel/docs/pairOT_tutorial_reduce_compute_requirements.html)
 
 ## Installation
 
-### Running SConnect via Docker
-To run SConnect, we provide a docker image that contains all the necessary dependencies: https://hub.docker.com/r/felix0097/sconnect/tags
+### Running pairOT via Docker
+To run pairOT, we provide a docker image that contains all the necessary dependencies: https://hub.docker.com/r/felix0097/pairot/tags
 ```bash
-docker pull felix0097/sconnect:full_v1
+docker pull felix0097/pairot:full_v1
 ```
 
-### Install SConnect via pip
+### Install pairOT via pip
 
 #### Install R
 To run the R differential expression testing code (pre-processing), you'll need to install R on your system.
@@ -129,10 +137,10 @@ conda install conda-forge::r-base
 ```
 Or install R directly on your system. 
 Please refer to the official R documentation for installation instructions: https://cran.r-project.org/bin/linux/ubuntu/fullREADME.html#installing-r
-#### Install SConnect via pip
+#### Install pairOT via pip
 ```bash
-git clone git@github.com:cellannotation/SConnect.git
-cd SConnect
+git clone git@github.com:cellannotation/pairOT.git
+cd pairOT
 pip install ".[de_testing]"
 ```
 
@@ -179,14 +187,14 @@ To scale to atlas-scale datasets, we recommend:
 
 
 ## Project structure
-* `sconnect/`: Contains the code for the SConnect package and the differential expression testing code
-* `docs/`: Contains the documentation and tutorial notebooks for SConnect
+* `pairot/`: Contains the code for the pairOT package and the differential expression testing code
+* `docs/`: Contains the documentation and tutorial notebooks for pairOT
 * `notebooks/`
   * `DEG-filtering/`: Code used to create gene list to filter differentially expressed genes.
   * `evaluation/`: Analysis code for paper
   * `example-data/`: Code used to download and preprocess the data used in the paper
   * `similarity-methods/`: `CellHint.ipynb` and `pyMN.ipynb` contains code to fit CellHint and MetaNeighbor reference models
-* `scripts/`: Contains the scripts used to train SConnect
+* `scripts/`: Contains the scripts used to train pairOT
 
 
 ## Licence
@@ -194,7 +202,7 @@ MIT license
 
 
 ## References
-`SConnect` was written by `Felix Fischer <felix.fischer@helmholtz-munich.de>`
+`pairOT` was written by `Felix Fischer <felix.fischer@helmholtz-munich.de>`
 
 Support for software development, testing, modeling, and benchmarking provided by the Cell Annotation Platform team 
 (Roman Mukhin)

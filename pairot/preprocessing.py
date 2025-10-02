@@ -5,7 +5,7 @@ import anndata
 import pandas as pd
 import scanpy as sc
 
-from sconnect.utils import (
+from pairot.utils import (
     get_expressed_genes_intersection,
     get_shared_highly_variable_genes,
 )
@@ -58,7 +58,7 @@ def preprocess_adatas(
     -------
     Tuple[anndata.AnnData, anndata.AnnData]
     """
-    from sconnect.de_testing.testing import calc_pseudobulk_stats
+    from pairot.de_testing.testing import calc_pseudobulk_stats
 
     adata1.X = adata1.X.astype("float32")
     adata2.X = adata2.X.astype("float32")

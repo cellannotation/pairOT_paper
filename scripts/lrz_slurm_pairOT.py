@@ -3,9 +3,9 @@ from itertools import product
 
 JOB_SCRIPT = r"""#!/bin/bash
 
-#SBATCH -J similarityOT
-#SBATCH --output=slurm_out/similarityOT.%j
-#SBATCH --error=slurm_out/similarityOT.%j
+#SBATCH -J pairOT
+#SBATCH --output=slurm_out/pairOT.%j
+#SBATCH --error=slurm_out/pairOT.%j
 #SBATCH --partition=mcml-hgx-a100-80x4
 #SBATCH --qos mcml
 #SBATCH --gres=gpu:1
@@ -14,10 +14,10 @@ JOB_SCRIPT = r"""#!/bin/bash
 #SBATCH --cpus-per-task=12
 
 
-CONTAINER_IMAGE="/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer/enroot-images/datasim.sqsh"
+CONTAINER_IMAGE="/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer/enroot-images/pairOT.sqsh"
 CONTAINER_MOUNTS="/dss:/dss,/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer:/mnt/dssfs02"
 
-SCRIPT="/dss/dsshome1/04/di93zer/git/dataset-similarity/scripts/python/run_similarityOT.py"
+SCRIPT="/dss/dsshome1/04/di93zer/git/dataset-similarity/scripts/python/run_pairOT.py"
 GIT_REPO="/dss/dsshome1/04/di93zer/git/dataset-similarity"
 
 SCRIPT_ARGS="--query_dataset={query_dataset} "

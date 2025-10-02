@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 
-from sconnect.utils import _calc_scaled_jaccard
+from pairot.utils import _calc_scaled_jaccard
 
 OFFICIAL_GENES = pd.read_csv(join(dirname(__file__), "resources/official-genes.csv"))
 FILTERED_GENES = pd.read_csv(join(dirname(__file__), "resources/filtered-genes.csv"))

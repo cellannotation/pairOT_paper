@@ -14,7 +14,7 @@ JOB_SCRIPT = r"""#!/bin/bash
 #SBATCH --cpus-per-task=12
 
 
-CONTAINER_IMAGE="/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer/enroot-images/pseudobulk.sqsh"
+CONTAINER_IMAGE="/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer/enroot-images/pairOT.sqsh"
 CONTAINER_MOUNTS="/dss:/dss,/dss/dssfs02/lwp-dss-0001/pn36po/pn36po-dss-0001/di93zer:/mnt/dssfs02"
 
 SCRIPT="/dss/dsshome1/04/di93zer/git/dataset-similarity/scripts/python/preprocess_datasets.py"

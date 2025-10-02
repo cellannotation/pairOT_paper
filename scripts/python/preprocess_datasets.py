@@ -4,7 +4,7 @@ from os.path import join
 
 import scanpy as sc
 
-from sconnect.preprocessing import preprocess_adatas
+from pairot.preprocessing import preprocess_adatas
 
 
 def parse_args():

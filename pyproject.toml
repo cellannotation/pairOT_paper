@@ -3,7 +3,7 @@ requires = ["setuptools>=62.1", "cython>=3.0.11"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sconnect"
+name = "pairot"
 version = "0.1.0"
 description = "Connecting cell types accross datasets."
 authors = [{name = "Felix Fischer", email = "fe.fischer@icloud.com"}]
@@ -25,11 +25,11 @@ dependencies = [
 ]
 
 [[tool.setuptools.ext-modules]]
-name = "sconnect.de_testing.auroc"
-sources = ["sconnect/de_testing/auroc.pyx"]
+name = "pairot.de_testing.auroc"
+sources = ["pairot/de_testing/auroc.pyx"]
 
 [tool.setuptools.package-data]
-"sconnect.de_testing" = ["resources/*"]
+"pairot.de_testing" = ["resources/*"]
 
 [project.optional-dependencies]
 de_testing = [
@@ -42,4 +42,4 @@ de_testing = [
 exclude = ["notebooks", "scripts"]
 
 [project.urls]
-Repository = "https://github.com/cellannotation/SConnect/tree/devel"
+Repository = "https://github.com/cellannotation/pairOT/tree/devel"

@@ -6,7 +6,7 @@ from os.path import join
 import anndata
 import pymn
 
-from sconnect.plotting import plot_cluster_mapping
+from pairot.plotting import plot_cluster_mapping
 from utils import load_data_cached
 
 

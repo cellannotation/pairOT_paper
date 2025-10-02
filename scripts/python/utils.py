@@ -5,7 +5,7 @@ from typing import Optional
 
 import scanpy as sc
 
-from sconnect.dataset_ot import DatasetMapping
+from pairot.dataset_ot import DatasetMapping
 
 
 def none_or_str(value: str):
