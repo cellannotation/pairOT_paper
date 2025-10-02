@@ -174,6 +174,25 @@ ro.r(INSTALL_R_PACKAGES_LATETST)
 It might take a while to install all R dependencies.
 
 
+**Note:** If you're using `R 4.3` you can install the following package versions:
+```python
+INSTALL_R_PACKAGES = """
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("limma")
+
+install.packages("remotes")
+library(remotes)
+install_version("rhdf5", version = "2.46.1", repos = "https://bioconductor.org/packages/3.18/bioc")
+install_version("Matrix", version = "1.6-0")
+install_version("magrittr", version = "2.0.3")
+install_version("data.table", version = "1.15.4")
+install_version("glue", version = "1.7.0")
+install_version("stringr", version = "1.5.1")
+"""
+```
+
+
 ### System requirements
 Operating system: Ubuntu 22.04 LTS (used OS version)
 
