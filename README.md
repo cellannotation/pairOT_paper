@@ -1,8 +1,8 @@
 [//]: # (# pairOT)
 
-<p align="center">
-  <img src="docs/pairOT-logo.png" alt="pairOT Logo" width="750"/>
-</p>
+<h1 align="center">
+  <img src="docs/pairOT-logo.png" alt="pairOT Logo" width="500"/>
+</h1>
 
 
 --------------------------------------------------------------------------------
