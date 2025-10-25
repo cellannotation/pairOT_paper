@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 import matplotlib as mpl
 import matplotlib.cm as cm
@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import seaborn as sns
 from scanpy.plotting.palettes import default_102
 
 
@@ -15,17 +16,38 @@ def _plot_heatmap(
     colormap: str,
     width: Optional[int] = None,
     height: Optional[int] = None,
+    backend: Literal["plotly", "matplotlib"] = "plotly",
     **kwargs,
 ):
     if width is None:
         width = max(30 * data.shape[1], 500)
     if height is None:
         height = max(20 * data.shape[0] + 275, 500)
-    fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap, **kwargs)
-    fig.update_layout(autosize=False, width=width, height=height)
-    fig.update_layout(coloraxis_showscale=False)
-    fig.update_xaxes(tickangle=90)
-    fig.update_yaxes(tickangle=0)
+
+    if backend == "plotly":
+        fig = px.imshow(data, text_auto=".2f", color_continuous_scale=colormap, **kwargs)
+        fig.update_layout(autosize=False, width=width, height=height)
+        fig.update_layout(coloraxis_showscale=False)
+        fig.update_xaxes(tickangle=90)
+        fig.update_yaxes(tickangle=0)
+    elif backend == "matplotlib":
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        sns.heatmap(
+            data,
+            annot=True,
+            fmt=".2f",
+            ax=ax,
+            vmin=kwargs.pop("zmin", None),
+            vmax=kwargs.pop("zmax", None),
+            cmap=colormap,
+            cbar=False,
+            square=True,
+            annot_kws={"size": 6},
+        )
+        ax.tick_params(axis='x', colors=(0.2, 0.2, 0.2, 1), length=0, labelsize=10)
+        ax.tick_params(axis='y', colors=(0.2, 0.2, 0.2, 1), length=0, labelsize=10)
+    else:
+        raise ValueError(f"Unsupported backend: {backend}. Backends supported: 'plotly', 'matplotlib'.")
 
     return fig
 
@@ -39,13 +61,14 @@ def plot_cluster_mapping(
     colormap: str = "Greens",
     sort_by_score: bool = True,
     show: bool = True,
+    backend: Literal["plotly", "matplotlib"] = "plotly",
 ):
     if sort_by_score:
         data = data.loc[
             data.max(axis=1).sort_values(ascending=False).index.tolist(),
             data.max().sort_values(ascending=False).index.tolist(),
         ]
-    fig = _plot_heatmap(data, colormap, width, height, zmin=zmin, zmax=zmax)
+    fig = _plot_heatmap(data, colormap, width, height, zmin=zmin, zmax=zmax, backend=backend)
     if show:
         fig.show()
         return None
@@ -58,8 +81,9 @@ def plot_cluster_distance(
     width: Optional[int] = None,
     height: Optional[int] = None,
     show: bool = True,
+    backend: Literal["plotly", "matplotlib"] = "plotly",
 ):
-    fig = _plot_heatmap(data, "RdYlGn_r", width, height, zmin=0.0, zmax=2.0)
+    fig = _plot_heatmap(data, "RdYlGn_r", width, height, zmin=0.0, zmax=2.0, backend=backend)
     if show:
         fig.show()
         return None
